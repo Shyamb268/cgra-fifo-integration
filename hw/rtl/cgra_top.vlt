@@ -4,4 +4,24 @@
 
 `verilator_config
 
-lint_off -rule UNUSED -file "*hw/rtl/heepsilon_top.sv" -match "Signal is not used: 'external_subsystem_powergate_iso'*"
+//lint_off -rule UNUSED -file "*hw/rtl/heepsilon_top.sv" -match "Signal is not used: 'external_subsystem_powergate_iso'*"
+
+
+// In CGRA top-level module
+fifo_if #(32) data_fifo_if();
+
+fifo #(
+    .WIDTH(32),
+    .DEPTH(16)
+) data_fifo_inst (
+    .clk(clk),
+    .rst_n(rst_n),
+    .wr_en(data_fifo_if.wr_en),
+    .rd_en(data_fifo_if.rd_en),
+    .din(data_fifo_if.din),
+    .dout(data_fifo_if.dout),
+    .full(data_fifo_if.full),
+    .empty(data_fifo_if.empty)
+);
+
+// Connect data_fifo_if.dout to CGRA input logic
