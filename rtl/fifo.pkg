@@ -1,5 +1,5 @@
 // fifo_pkg.sv
-package fifo_pkg;
+package fifo_pkg; 
     parameter int FIFO_DEPTH = 16;
     typedef logic [31:0] fifo_data_t;
 endpackage
