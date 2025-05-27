@@ -21,6 +21,10 @@ module data_bus_handler
   input  logic [              N_COL-1:0] col_start_i,
   input  logic [              N_COL-1:0] col_conf_ack_i,
   input  logic [              N_COL-1:0] col_acc_map_i [0:N_COL-1],
+  // FIFO interface for input data
+  input  logic [DATA_BUS_DATA_WIDTH-1:0] fifo_data_i,
+  input  logic                           fifo_valid_i,
+  output logic                           fifo_ready_o,
   output logic [              N_COL-1:0] bus_data_req_o,
   output logic [ DATA_BUS_ADD_WIDTH-1:0] bus_data_add_o [0:N_COL-1],
   output logic [              N_COL-1:0] bus_data_wen_o,
@@ -234,5 +238,21 @@ module data_bus_handler
       end
     end
   endgenerate
+
+  // Modify the data read logic to use FIFO
+  always_comb begin
+    for (int j=0; j<N_COL; j++) begin
+      if (rcs_data_req_i[j] == 1'b1 && rcs_data_wen_i[j] == 1'b0) begin
+        // Read from FIFO instead of processor ROM
+        rcs_data_rdata_o[j] = fifo_data_i;
+        rcs_data_rvalid_o[j] = fifo_valid_i;
+        fifo_ready_o = ~data_stall_o[j];
+      end else begin
+        rcs_data_rdata_o[j] = bus_data_rdata_i[j];
+        rcs_data_rvalid_o[j] = bus_r_valid_i[j];
+        fifo_ready_o = 1'b0;
+      end
+    end
+  end
 
 endmodule

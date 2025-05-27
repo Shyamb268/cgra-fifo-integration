@@ -36,7 +36,11 @@ module cgra_top
   output logic [  IMEM_N_LINES_LOG2-1:0] cm_addr_o,
   input  logic [        INSTR_WIDTH-1:0] rcs_cmem_rdata_i [0:N_ROW-1],
   // CGRA interrupts
-  output logic                           evt_o
+  output logic                           evt_o,
+  // FIFO interface for input data
+  input  logic [DATA_BUS_DATA_WIDTH-1:0] fifo_data_i,
+  input  logic                           fifo_valid_i,
+  output logic                           fifo_ready_o
 );
 
   logic [              N_COL-1:0] rcs_data_req_s;
@@ -212,6 +216,10 @@ module cgra_top
     .col_start_i       ( col_start_s       ),
     .col_conf_ack_i    ( rcs_conf_ack_s    ),
     .col_acc_map_i     ( col_acc_map_s     ),
+    // FIFO interface
+    .fifo_data_i       ( fifo_data_i       ),
+    .fifo_valid_i      ( fifo_valid_i      ),
+    .fifo_ready_o      ( fifo_ready_o      ),
     .bus_data_req_o    ( tcdm_req_o        ),
     .bus_data_add_o    ( tcdm_add_o        ),
     .bus_data_wen_o    ( tcdm_wen_o        ),
