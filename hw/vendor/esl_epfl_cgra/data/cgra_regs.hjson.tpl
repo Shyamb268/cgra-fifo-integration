@@ -26,6 +26,25 @@
         { bits: "31:0", name: "KERNEL_ID", desc: "Kernel ID acceleration request" }
       ]
     },
+    { name:     "FIFO_DATA",
+      desc:     "FIFO data register for writing input data",
+      swaccess: "rw",
+      hwaccess: "hro",
+      fields: [
+        { bits: "31:0", name: "FIFO_DATA", desc: "Data to write to the FIFO" }
+      ]
+    },
+    { name:     "FIFO_STATUS",
+      desc:     "FIFO status register",
+      swaccess: "ro",
+      hwaccess: "hwo",
+      fields: [
+        { bits: "0", name: "FULL", desc: "FIFO is full" },
+        { bits: "1", name: "EMPTY", desc: "FIFO is empty" },
+        { bits: "2", name: "ALMOST_FULL", desc: "FIFO is almost full" },
+        { bits: "3", name: "ALMOST_EMPTY", desc: "FIFO is almost empty" }
+      ]
+    },
 
   % for col in range(cgra_max_columns):
     { name:     "PTR_IN_COL_${col}",
