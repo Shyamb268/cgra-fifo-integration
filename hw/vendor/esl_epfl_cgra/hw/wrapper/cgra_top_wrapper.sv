@@ -2,6 +2,79 @@
 // Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 
+module cgra_top_wrapper #(
+    parameter int unsigned N_COL = 4,
+    parameter int unsigned N_ROW = 4
+) (
+    input  logic clk_i,
+    input  logic rst_ni,
+    input  logic cgra_enable_i,
+    input  logic rst_logic_ni,
+    output obi_req_t [N_COL-1:0] masters_req_o,
+    input  obi_resp_t [N_COL-1:0] masters_resp_i,
+    input  reg_req_t reg_req_i,
+    output reg_rsp_t reg_rsp_o,
+    input  obi_req_t slave_req_i,
+    output obi_resp_t slave_resp_o,
+    input  logic cmem_set_retentive_ni,
+    output logic cgra_int_o
+);
+
+    // Internal signals
+    logic [N_COL-1:0] tcdm_req;
+    logic [31:0] tcdm_add [N_COL-1:0];
+    logic [N_COL-1:0] tcdm_wen;
+    logic [3:0] tcdm_be [N_COL-1:0];
+    logic [31:0] tcdm_wdata [N_COL-1:0];
+    logic [N_COL-1:0] tcdm_gnt;
+    logic [31:0] tcdm_rdata [N_COL-1:0];
+    logic [N_COL-1:0] tcdm_r_valid;
+
+    logic cm_req;
+    logic [31:0] cm_add;
+    logic cm_we;
+    logic [3:0] cm_be;
+    logic [31:0] cm_wdata;
+    logic cm_gnt;
+    logic cm_rvalid;
+
+    logic [N_ROW-1:0] cm_row_req;
+    logic cm_we_o;
+    logic [3:0] cm_addr;
+    logic [31:0] rcs_cmem_rdata [N_ROW-1:0];
+
+    // Convert OBI to TCDM interface for masters
+    genvar i;
+    generate
+        for (i = 0; i < N_COL; i++) begin : gen_obi_to_tcdm
+            obi_to_tcdm i_obi_to_tcdm (
+                .clk_i(clk_i),
+                .rst_ni(rst_ni),
+                .obi_req_i(masters_req_o[i]),
+                .obi_resp_o(masters_resp_i[i]),
+                .tcdm_req_o(tcdm_req[i]),
+                .tcdm_add_o(tcdm_add[i]),
+                .tcdm_wen_o(tcdm_wen[i]),
+                .tcdm_be_o(tcdm_be[i]),
+                .tcdm_wdata_o(tcdm_wdata[i]),
+                .tcdm_gnt_i(tcdm_gnt[i]),
+                .tcdm_rdata_i(tcdm_rdata[i]),
+                .tcdm_r_valid_i(tcdm_r_valid[i])
+            );
+        end
+    endgenerate
+
+    // Convert OBI to TCDM interface for context memory
+    obi_to_tcdm i_obi_to_tcdm_cm (
+        .clk_i(clk_i),
+        .rst_ni(rst_ni),
+        .obi_req_i(slave_req_i),
+        .obi_resp_o(slave_resp_o),
+        .tcdm_req_o(cm_req),
+        .tcdm_add_o(cm_add),
+        .tcdm_wen_o(cm_we),
+        .tcdm_be_o(cm_be),
+        .tcdm_wdata_o(cm_wdata),
 module cgra_top_wrapper
   import cgra_pkg::*;
   import obi_pkg::*;
