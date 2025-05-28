@@ -16,6 +16,7 @@
 #include "rv_plic_regs.h"
 #include "heepsilon.h"
 #include "cgra.h"
+#include "cgra_fifo.h"
 
 // #define DEBUG
 
@@ -51,14 +52,12 @@ uint32_t instr_list[INSTR_PER_RC] = {
   
 uint32_t exit_instr = 0x00c80000;
 
-
 // Interrupt controller variables
 void handler_irq_cgra(uint32_t id) {
     cgra_intr_flag = 1;
 }
 
 int main(void) {
-
   // Generate the bitstream on file to match the specific CGRA size
   uint32_t kmem_conf_word = 0;
   // The maximum number of columns are used and the kernel always starts at address 0
@@ -71,8 +70,6 @@ int main(void) {
   kmem_conf_word = ((uint32_t) (onehot_max_cols << (CGRA_CMEM_BK_DEPTH_LOG2+CGRA_RCS_NUM_CREG_LOG2))) | (uint32_t)(INSTR_PER_RC-1);
 
   cgra_kmem_bitstream[1] = kmem_conf_word;
-
-  // printf("Kernel configuration word: 0x%x\n", kmem_conf_word);
 
   for (int i=0; i<CGRA_N_ROWS; i++) {
     for (int j=0; j<CGRA_MAX_COLS; j++) {
@@ -145,6 +142,14 @@ int main(void) {
   cgra_wait_ready(&cgra);
   // Enable performance counters
   cgra_perf_cnt_enable(&cgra, 1);
+
+  // Write input data to FIFO
+  for (int i=0; i<CGRA_N_ROWS; i++) {
+    for (int j=0; j<CGRA_MAX_COLS; j++) {
+      cgra_fifo_wait_ready(&cgra);
+      cgra_fifo_write(&cgra, stimuli[i][j]);
+    }
+  }
 
   // Set CGRA kernel pointers
   for (int col_idx=0; col_idx<CGRA_MAX_COLS; col_idx++) {

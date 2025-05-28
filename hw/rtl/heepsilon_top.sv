@@ -78,10 +78,11 @@ module heepsilon_top #(
   // External interrupts
   logic [core_v_mini_mcu_pkg::NEXT_INT-1:0] ext_intr_vector;
 
-  logic cgra_int;
-  logic cgra_enable;
-  logic cgra_logic_rst_n;
-  logic cgra_ram_banks_set_retentive_n;
+  // CGRA signals for multiple instances
+  logic [heepsilon_pkg::EXT_XBAR_NSLAVE-1:0] cgra_int;
+  logic [heepsilon_pkg::EXT_XBAR_NSLAVE-1:0] cgra_enable;
+  logic [heepsilon_pkg::EXT_XBAR_NSLAVE-1:0] cgra_logic_rst_n;
+  logic [heepsilon_pkg::EXT_XBAR_NSLAVE-1:0] cgra_ram_banks_set_retentive_n;
 
   // External subsystems
   logic external_subsystem_rst_n;
@@ -93,9 +94,9 @@ module heepsilon_top #(
   logic external_subsystem_powergate_iso_n;
 
   // CGRA logic clock gating unit enable (always-on in this case)
-  assign cgra_enable                    = 1'b1;
-  assign cgra_logic_rst_n               = external_subsystem_rst_n;
-  assign cgra_ram_banks_set_retentive_n = external_ram_banks_set_retentive_n;
+  assign cgra_enable = '1;
+  assign cgra_logic_rst_n = {heepsilon_pkg::EXT_XBAR_NSLAVE{external_subsystem_rst_n}};
+  assign cgra_ram_banks_set_retentive_n = {heepsilon_pkg::EXT_XBAR_NSLAVE{external_ram_banks_set_retentive_n}};
 
   always_comb begin
     // All interrupt lines set to zero by default
@@ -103,7 +104,9 @@ module heepsilon_top #(
       ext_intr_vector[i] = 1'b0;
     end
     // Re-assign the interrupt lines used here
-    ext_intr_vector[0] = cgra_int;
+    for (int i = 0; i < heepsilon_pkg::EXT_XBAR_NSLAVE; i++) begin
+      ext_intr_vector[i] = cgra_int[i];
+    end
   end
 
 
@@ -113,7 +116,7 @@ module heepsilon_top #(
   // the corresponding X-HEEP slave port (to the internal system bus).
   ext_bus #(
       .EXT_XBAR_NMASTER(CGRA_XBAR_NMASTER),
-      .EXT_XBAR_NSLAVE (1)
+      .EXT_XBAR_NSLAVE (heepsilon_pkg::EXT_XBAR_NSLAVE)
   ) ext_bus_i (
       .clk_i        (clk_i),
       .rst_ni       (rst_ni),
@@ -141,20 +144,26 @@ module heepsilon_top #(
       .ext_slave_resp_i (ext_xbar_slave_resp)
   );
 
-  cgra_top_wrapper cgra_top_wrapper_i (
-      .clk_i,
-      .rst_ni,
-      .cgra_enable_i(cgra_enable),
-      .rst_logic_ni(cgra_logic_rst_n),
-      .masters_req_o(ext_master_req),
-      .masters_resp_i(ext_master_resp),
-      .reg_req_i(ext_periph_slave_req),
-      .reg_rsp_o(ext_periph_slave_resp),
-      .slave_req_i(ext_xbar_slave_req),
-      .slave_resp_o(ext_xbar_slave_resp),
-      .cmem_set_retentive_ni(cgra_ram_banks_set_retentive_n),
-      .cgra_int_o(cgra_int)
-  );
+  // Generate multiple CGRA instances
+  genvar i;
+  generate
+    for (i = 0; i < heepsilon_pkg::EXT_XBAR_NSLAVE; i++) begin : gen_cgra_instances
+      cgra_top_wrapper cgra_top_wrapper_i (
+          .clk_i,
+          .rst_ni,
+          .cgra_enable_i(cgra_enable[i]),
+          .rst_logic_ni(cgra_logic_rst_n[i]),
+          .masters_req_o(ext_master_req[i*heepsilon_pkg::CGRA_XBAR_NMASTER +: heepsilon_pkg::CGRA_XBAR_NMASTER]),
+          .masters_resp_i(ext_master_resp[i*heepsilon_pkg::CGRA_XBAR_NMASTER +: heepsilon_pkg::CGRA_XBAR_NMASTER]),
+          .reg_req_i(ext_periph_slave_req[i]),
+          .reg_rsp_o(ext_periph_slave_resp[i]),
+          .slave_req_i(ext_xbar_slave_req[i]),
+          .slave_resp_o(ext_xbar_slave_resp[i]),
+          .cmem_set_retentive_ni(cgra_ram_banks_set_retentive_n[i]),
+          .cgra_int_o(cgra_int[i])
+      );
+    end
+  endgenerate
 
   // eXtension Interface
   if_xif #() ext_if ();

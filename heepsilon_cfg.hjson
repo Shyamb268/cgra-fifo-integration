@@ -16,17 +16,18 @@
         num_rows: 4
         // It is possible to limit the maximum number of columns a kernel can use (this saves a bit of resources)
         // The default value should be the same than num_columns, put an number to change it
-        max_columns: default
+        max_columns: 4
         // Number of instructions each RC can contain (usually a power of 2)
-        rcs_num_instr: 32
+        rcs_num_instr: 16
         // Context memory bank depth
         // This parameter is by default set to max_columns*rcs_num_instr
         // The default depth correspond to a minimum required in case a kernel uses max_columns and rcs_num_instr instructions per RC
         // The depth can be increased in case more kernels need to be stored inside the context memory
-        cmem_bk_depth: default
+        cmem_bk_depth: 16
         // This value fixes the maximum number of kernel configuration words that can be stores
         // It does not mean that the context memory can holds that many kernels, it depends on the size of each kernel
         // You probably don't need to change this value
         kmem_depth: 16
+        num_instances: 4
     },
 }
