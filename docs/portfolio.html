@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HEEPsilon Portfolio</title>
+    <link rel="stylesheet" href="portfolio.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-brand">HEEPsilon</div>
+        <ul class="nav-links">
+            <li><a href="#home" class="active">Home</a></li>
+            <li><a href="#projects">Projects</a></li>
+            <li><a href="#my-projects">My Projects</a></li>
+            <li><a href="#technical">Technical</a></li>
+            <li><a href="#changelog">Changelog</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+    </nav>
+
+    <main>
+        <section id="home" class="dashboard">
+            <h1>HEEPsilon Project Dashboard</h1>
+            <div class="dashboard-grid">
+                <div class="card">
+                    <h3>Active Projects</h3>
+                    <div class="stat">3</div>
+                </div>
+                <div class="card">
+                    <h3>Recent Updates</h3>
+                    <div class="stat">5</div>
+                </div>
+                <div class="card">
+                    <h3>Completed Tasks</h3>
+                    <div class="stat">12</div>
+                </div>
+            </div>
+            <div class="recent-updates">
+                <h2>Recent Updates</h2>
+                <div class="update-list">
+                    <div class="update-item">
+                        <span class="date">2024-03-20</span>
+                        <span class="description">Added new project documentation</span>
+                    </div>
+                    <div class="update-item">
+                        <span class="date">2024-03-19</span>
+                        <span class="description">Updated technical specifications</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="projects" class="projects">
+            <h2>Project Overview</h2>
+            <div class="project-grid">
+                <div class="project-card">
+                    <h3>Project Alpha</h3>
+                    <p>Advanced system integration project focusing on performance optimization.</p>
+                    <div class="project-tags">
+                        <span class="tag">System Design</span>
+                        <span class="tag">Integration</span>
+                    </div>
+                </div>
+                <div class="project-card">
+                    <h3>Project Beta</h3>
+                    <p>Research and development initiative for next-generation solutions.</p>
+                    <div class="project-tags">
+                        <span class="tag">R&D</span>
+                        <span class="tag">Innovation</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="my-projects" class="my-projects">
+            <h2>My Projects</h2>
+            
+            <div class="upload-form-container">
+                <h3>Upload New Project</h3>
+                <form id="projectUploadForm" class="upload-form">
+                    <div class="form-group">
+                        <label for="projectTitle">Project Title</label>
+                        <input type="text" id="projectTitle" name="projectTitle" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectDescription">Description</label>
+                        <textarea id="projectDescription" name="projectDescription" required></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectDate">Date</label>
+                        <input type="date" id="projectDate" name="projectDate" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="projectFiles">Files</label>
+                        <input type="file" id="projectFiles" name="projectFiles" multiple>
+                        <div class="file-list" id="fileList"></div>
+                    </div>
+                    
+                    <button type="submit" class="upload-btn">Upload Project</button>
+                </form>
+            </div>
+
+            <div class="projects-display">
+                <h3>Uploaded Projects</h3>
+                <div class="projects-grid" id="projectsGrid">
+                    <!-- Projects will be dynamically added here -->
+                </div>
+            </div>
+        </section>
+
+        <section id="technical" class="technical">
+            <h2>Technical Details</h2>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h3>Architecture</h3>
+                    <ul>
+                        <li>Microservices Architecture</li>
+                        <li>Cloud-Native Design</li>
+                        <li>Scalable Infrastructure</li>
+                    </ul>
+                </div>
+                <div class="tech-card">
+                    <h3>Technologies</h3>
+                    <ul>
+                        <li>Python</li>
+                        <li>JavaScript</li>
+                        <li>Docker</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="changelog" class="changelog">
+            <h2>Changelog & Update History</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="date">March 2024</div>
+                    <div class="content">
+                        <h4>Version 2.0.0</h4>
+                        <ul>
+                            <li>Major system overhaul</li>
+                            <li>New feature implementation</li>
+                            <li>Performance improvements</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="date">February 2024</div>
+                    <div class="content">
+                        <h4>Version 1.5.0</h4>
+                        <ul>
+                            <li>Bug fixes</li>
+                            <li>UI improvements</li>
+                            <li>Documentation updates</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact">
+            <h2>Contact Information</h2>
+            <div class="contact-grid">
+                <div class="contact-card">
+                    <h3>Get in Touch</h3>
+                    <div class="contact-info">
+                        <p><i class="fas fa-envelope"></i> Email: contact@heepsilon.com</p>
+                        <p><i class="fas fa-phone"></i> Phone: +1 (555) 123-4567</p>
+                        <p><i class="fas fa-map-marker-alt"></i> Location: EPFL, Lausanne, Switzerland</p>
+                    </div>
+                </div>
+                <div class="contact-card">
+                    <h3>Connect with Us</h3>
+                    <div class="social-links">
+                        <a href="https://github.com/heepsilon" target="_blank" class="social-link">
+                            <i class="fab fa-github"></i> GitHub
+                        </a>
+                        <a href="https://linkedin.com/company/heepsilon" target="_blank" class="social-link">
+                            <i class="fab fa-linkedin"></i> LinkedIn
+                        </a>
+                        <a href="https://twitter.com/heepsilon" target="_blank" class="social-link">
+                            <i class="fab fa-twitter"></i> Twitter
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 HEEPsilon Portfolio. All rights reserved.</p>
+    </footer>
+
+    <script src="portfolio.js"></script>
+</body>
+</html> 
