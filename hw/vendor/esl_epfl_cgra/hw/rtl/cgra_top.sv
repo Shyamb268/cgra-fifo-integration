@@ -2,103 +2,121 @@
 // Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 
+// Define parameters explicitly
+parameter N_COL = 4;
+parameter DATA_BUS_ADD_WIDTH = 32;
+parameter DATA_BUS_DATA_WIDTH = 32;
+parameter N_ROW = 4;
+parameter IMEM_N_LINES_LOG2 = 8;
+parameter INSTR_WIDTH = 32;
+parameter DP_WIDTH = 32;
+parameter RC_CONST_WIDTH = 8;
+parameter KER_CONF_N_REG_LOG2 = 4;
+parameter KMEM_WIDTH = 32;
+parameter RCS_NUM_CREG_LOG2 = 8;
+parameter RC_INSTR_N_REG_LOG2 = 8;
+parameter MAX_COL_REQ = 4;
+parameter CGRA_NUM_PERIPH_REG_LOG2 = 4;
+parameter CGRA_PERIPH_STATUS_REG_OFFSET = 0;
+
 module cgra_top
-  import cgra_pkg::*;
-  import reg_pkg::*;
 (
-  input  logic                           clk_i,
-  input  logic                           rst_ni,
+  input  wire                           clk_i,
+  input  wire                           rst_ni,
   // APB interface
-  input  reg_req_t                       reg_req_i,
-  output reg_rsp_t                       reg_rsp_o,
+  input  wire [31:0]                    reg_req_i,
+  output wire [31:0]                    reg_rsp_o,
   // AHB Master port
-  output logic [              N_COL-1:0] tcdm_req_o,
-  output logic [ DATA_BUS_ADD_WIDTH-1:0] tcdm_add_o [0:N_COL-1],
-  output logic [              N_COL-1:0] tcdm_wen_o,
-  output logic [                  4-1:0] tcdm_be_o [0:N_COL-1],
-  output logic [DATA_BUS_DATA_WIDTH-1:0] tcdm_wdata_o [0:N_COL-1],
-  input  logic [              N_COL-1:0] tcdm_gnt_i,
-  input  logic [DATA_BUS_DATA_WIDTH-1:0] tcdm_rdata_i [0:N_COL-1],
-  input  logic [              N_COL-1:0] tcdm_r_valid_i,
+  output wire [N_COL-1:0]               tcdm_req_o,
+  output wire [DATA_BUS_ADD_WIDTH-1:0]  tcdm_add_o [0:N_COL-1],
+  output wire [N_COL-1:0]               tcdm_wen_o,
+  output wire [3:0]                     tcdm_be_o [0:N_COL-1],
+  output wire [DATA_BUS_DATA_WIDTH-1:0] tcdm_wdata_o [0:N_COL-1],
+  input  wire [N_COL-1:0]               tcdm_gnt_i,
+  input  wire [DATA_BUS_DATA_WIDTH-1:0] tcdm_rdata_i [0:N_COL-1],
+  input  wire [N_COL-1:0]               tcdm_r_valid_i,
   // AHB Slave port
-  input  logic                           cm_req_i,
-  input  logic [ DATA_BUS_ADD_WIDTH-1:0] cm_add_i,
-  input  logic                           cm_we_i,
-  input  logic [                  4-1:0] cm_be_i,
-  input  logic [DATA_BUS_DATA_WIDTH-1:0] cm_wdata_i,
-  output logic                           cm_gnt_o,
-  output logic                           cm_rvalid_o,
+  input  wire                           cm_req_i,
+  input  wire [DATA_BUS_ADD_WIDTH-1:0]  cm_add_i,
+  input  wire                           cm_we_i,
+  input  wire [3:0]                     cm_be_i,
+  input  wire [DATA_BUS_DATA_WIDTH-1:0] cm_wdata_i,
+  output wire                           cm_gnt_o,
+  output wire                           cm_rvalid_o,
   // Context memory decoder to actual SRAM macro
-  input  logic                           clk_mem_cg_i,
-  output logic                           clk_mem_en_o,
-  output logic [              N_ROW-1:0] cm_row_req_o,
-  output logic                           cm_we_o,
-  output logic [  IMEM_N_LINES_LOG2-1:0] cm_addr_o,
-  input  logic [        INSTR_WIDTH-1:0] rcs_cmem_rdata_i [0:N_ROW-1],
+  input  wire                           clk_mem_cg_i,
+  output wire                           clk_mem_en_o,
+  output wire [N_ROW-1:0]               cm_row_req_o,
+  output wire                           cm_we_o,
+  output wire [IMEM_N_LINES_LOG2-1:0]   cm_addr_o,
+  input  wire [INSTR_WIDTH-1:0]         rcs_cmem_rdata_i [0:N_ROW-1],
   // CGRA interrupts
-  output logic                           evt_o,
+  output wire                           evt_o,
   // FIFO interface for input data
-  input  logic [DATA_BUS_DATA_WIDTH-1:0] fifo_data_i,
-  input  logic                           fifo_valid_i,
-  output logic                           fifo_ready_o
+  input  wire [DATA_BUS_DATA_WIDTH-1:0] fifo_data_i,
+  input  wire                           fifo_valid_i,
+  output wire                           fifo_ready_o,
+  output wire [DATA_BUS_DATA_WIDTH-1:0] fifo_data_o,
+  output wire                           fifo_valid_o,
+  input  wire                           fifo_ready_i
 );
 
-  logic [              N_COL-1:0] rcs_data_req_s;
-  logic [              N_COL-1:0] rcs_data_wen_s;
-  logic [              N_COL-1:0] rcs_data_ind_s;
-  logic [           DP_WIDTH-1:0] rcs_data_add_s [0:N_COL-1];
-  logic [           DP_WIDTH-1:0] rcs_data_wdata_s [0:N_COL-1];
-  logic [           DP_WIDTH-1:0] rcs_data_rdata_s [0:N_COL-1];
-  logic [              N_COL-1:0] rcs_data_gnt_s;
-  logic [              N_COL-1:0] rcs_data_rvalid_s;
-  logic [     RC_CONST_WIDTH-1:0] rcs_add_inc_s [0:N_COL-1];
-  logic [              N_COL-1:0] data_stall_s ;
-  logic [KER_CONF_N_REG_LOG2-1:0] ker_id_req_s;
-  logic [              N_COL-1:0] acc_end_s;
-  logic [         KMEM_WIDTH-1:0] kmem_word_s;
-  logic [              N_COL-1:0] rcs_col_e_s;
-  logic [              N_COL-1:0] rcs_conf_we_s;
-  logic [              N_COL-1:0] rcs_conf_re_s;
-  logic [              N_COL-1:0] acc_req_s;
-  logic                           acc_ack_s;
-  logic [  RCS_NUM_CREG_LOG2-1:0] rcs_pc_s [0:N_COL-1];
-  logic [              N_COL-1:0] rcs_rst_col_s;
-  logic [              N_COL-1:0] rcs_pc_e_s;
-  logic [              N_COL-1:0] col_start_s;
-  logic [              N_COL-1:0] rcs_conf_ack_s;
-  logic [              N_COL-1:0] rcs_br_req_s ;
-  logic [  RCS_NUM_CREG_LOG2-1:0] rcs_br_add_s [0:N_COL-1];
-  logic [              N_COL-1:0] rcs_stall_s;
-  logic [RC_INSTR_N_REG_LOG2-1:0] imem_radd_s;
-  logic [              N_COL-1:0] rcs_exec_end_s;
-  logic [              N_COL-1:0] col_acc_map_s [0:N_COL-1];
-  logic [           DP_WIDTH-1:0] rd_ptr_s [0:MAX_COL_REQ-1];
-  logic [           DP_WIDTH-1:0] wr_ptr_s [0:MAX_COL_REQ-1];
-  logic                           imem_gnt_ctrl_s;
-  logic                           imem_rvalid_ctrl_s;
-  logic                           rcs_conf_req_s;
+  wire [N_COL-1:0] rcs_data_req_s;
+  wire [N_COL-1:0] rcs_data_wen_s;
+  wire [N_COL-1:0] rcs_data_ind_s;
+  wire [DP_WIDTH-1:0] rcs_data_add_s [0:N_COL-1];
+  wire [DP_WIDTH-1:0] rcs_data_wdata_s [0:N_COL-1];
+  wire [DP_WIDTH-1:0] rcs_data_rdata_s [0:N_COL-1];
+  wire [N_COL-1:0] rcs_data_gnt_s;
+  wire [N_COL-1:0] rcs_data_rvalid_s;
+  wire [RC_CONST_WIDTH-1:0] rcs_add_inc_s [0:N_COL-1];
+  wire [N_COL-1:0] data_stall_s;
+  wire [KER_CONF_N_REG_LOG2-1:0] ker_id_req_s;
+  wire [KMEM_WIDTH-1:0] kmem_word_s;
+  wire [N_COL-1:0] rcs_col_e_s;
+  wire [N_COL-1:0] rcs_conf_we_s;
+  wire [N_COL-1:0] rcs_conf_re_s;
+  wire [N_COL-1:0] acc_req_s;
+  wire acc_ack_s;
+  wire [RCS_NUM_CREG_LOG2-1:0] rcs_pc_s [0:N_COL-1];
+  wire [N_COL-1:0] rcs_rst_col_s;
+  wire [N_COL-1:0] rcs_pc_e_s;
+  wire [N_COL-1:0] col_start_s;
+  wire [N_COL-1:0] rcs_conf_ack_s;
+  wire [N_COL-1:0] rcs_br_req_s;
+  wire [RCS_NUM_CREG_LOG2-1:0] rcs_br_add_s [0:N_COL-1];
+  wire [N_COL-1:0] rcs_stall_s;
+  wire [RC_INSTR_N_REG_LOG2-1:0] imem_radd_s;
+  wire [N_COL-1:0] rcs_exec_end_s;
+  wire [N_COL-1:0] col_acc_map_s [0:N_COL-1];
+  wire [DP_WIDTH-1:0] rd_ptr_s [0:MAX_COL_REQ-1];
+  wire [DP_WIDTH-1:0] wr_ptr_s [0:MAX_COL_REQ-1];
+  wire imem_gnt_ctrl_s;
+  wire imem_rvalid_ctrl_s;
+  wire rcs_conf_req_s;
 
   // Print message everytime CGRA periph regs are accessed for profiling
   // pragma translate_off
-  longint cc_count;
+  integer cc_count;
   always @(posedge clk_i or negedge rst_ni) begin
     if (rst_ni == 1'b0) begin
       cc_count <= 0;
     end else begin
-      if (reg_req_i.valid == 1'b1 && reg_rsp_o.ready == 1'b1 && reg_req_i.addr[CGRA_NUM_PERIPH_REG_LOG2+2-1:2] == CGRA_PERIPH_STATUS_REG_OFFSET) begin
-        $display("[CGRA] %t : GLOBAL CLOCK-CYCLE COUNTER: %l", $time, cc_count);
+      if (reg_req_i[0] == 1'b1 && reg_rsp_o[0] == 1'b1 && reg_req_i[CGRA_NUM_PERIPH_REG_LOG2+2-1:2] == CGRA_PERIPH_STATUS_REG_OFFSET) begin
+        $display("[CGRA] %t : GLOBAL CLOCK-CYCLE COUNTER: %d", $time, cc_count);
       end
       cc_count <= cc_count + 1;
     end
   end
   // pragma translate_on
 
-  logic [N_COL-1:0] clk_rcs_cg;
+  wire [N_COL-1:0] clk_rcs_cg;
 
   `ifndef VERILATOR
     // Activate the clock of a column when it is active only
+    genvar i;
     generate
-      for (genvar i=0; i<N_COL; i++) begin : rcs_col_cg_gen
+      for(i = 0; i < N_COL; i = i + 1) begin : rcs_col_cg_gen
         cgra_clock_gate clk_gate_rcs_col_i (
           .clk_i     ( clk_i ),
           .test_en_i ( 1'b0 ),
@@ -114,13 +132,13 @@ module cgra_top
     // trick to make sure input data and internal clock signal to the CGRA are updated
     // at the same delta cycle. This is not a problem with all simulators. For example,
     // modelsim correctly simulates this design without this trick.
+    integer i;
     always_comb begin
-      for (int i=0; i<N_COL; i++) begin : rcs_col_cg_gen
+      for (i = 0; i < N_COL; i = i + 1) begin : rcs_col_cg_gen
         assign clk_rcs_cg[i] = clk_i;
       end
     end
   `endif
-
 
   //---------------------------------------------------------------------
   //
@@ -220,6 +238,9 @@ module cgra_top
     .fifo_data_i       ( fifo_data_i       ),
     .fifo_valid_i      ( fifo_valid_i      ),
     .fifo_ready_o      ( fifo_ready_o      ),
+    .fifo_data_o       ( fifo_data_o       ),
+    .fifo_valid_o      ( fifo_valid_o      ),
+    .fifo_ready_i      ( fifo_ready_i      ),
     .bus_data_req_o    ( tcdm_req_o        ),
     .bus_data_add_o    ( tcdm_add_o        ),
     .bus_data_wen_o    ( tcdm_wen_o        ),

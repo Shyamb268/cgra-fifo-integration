@@ -10,23 +10,24 @@ static cgra_fifo_config_t instance_configs[MAX_INSTANCES];
 static uint8_t num_instances = 0;
 
 // Register offsets
-#define FIFO_DATA_REG    0x00
-#define FIFO_STATUS_REG  0x04
-#define FIFO_CTRL_REG    0x08
-#define CGRA_CTRL_REG    0x0C
-#define CGRA_STATUS_REG  0x10
+#define REG_FIFO_DATA    0x00
+#define REG_FIFO_STATUS  0x04
+#define REG_CGRA_CTRL    0x08
+#define REG_CGRA_STATUS  0x0C
 
-int cgra_fifo_init(void) {
-    // Initialize CGRA driver
-    if (cgra_init() != 0) {
+// Status register bits
+#define STATUS_FIFO_FULL   (1 << 0)
+#define STATUS_FIFO_EMPTY  (1 << 1)
+#define STATUS_CGRA_DONE   (1 << 2)
+
+int cgra_fifo_init(cgra_fifo_driver_t* driver, uint32_t base_addr, uint32_t num_instances) {
+    if (!driver || num_instances == 0) {
         return -1;
     }
     
-    // Get FIFO base address from CGRA driver
-    fifo_base_addr = cgra_get_base_addr() + CGRA_FIFO_OFFSET;
-    
-    // Reset FIFO
-    return cgra_fifo_reset();
+    driver->base_addr = (volatile uint32_t*)base_addr;
+    driver->num_instances = num_instances;
+    return 0;
 }
 
 int cgra_fifo_configure(const cgra_fifo_config_t *config) {
@@ -54,15 +55,18 @@ int cgra_fifo_configure(const cgra_fifo_config_t *config) {
     return 0;
 }
 
-int cgra_fifo_write(uint32_t data) {
-    // Wait for FIFO to be ready
-    if (cgra_fifo_wait_ready() != 0) {
+int cgra_fifo_write(cgra_fifo_driver_t* driver, uint32_t data) {
+    if (!driver) {
+        return -1;
+    }
+    
+    // Check if FIFO is full
+    if (driver->base_addr[REG_FIFO_STATUS] & STATUS_FIFO_FULL) {
         return -1;
     }
     
     // Write data to FIFO
-    cgra_write_reg(fifo_base_addr + FIFO_DATA_REG, data);
-    
+    driver->base_addr[REG_FIFO_DATA] = data;
     return 0;
 }
 
@@ -99,13 +103,38 @@ int cgra_fifo_get_status(cgra_fifo_status_t *status) {
     return 0;
 }
 
-int cgra_fifo_start_instance(uint8_t instance_id) {
-    if (instance_id >= num_instances) {
+int cgra_start_instance(cgra_fifo_driver_t* driver, uint32_t instance_id) {
+    if (!driver || instance_id >= driver->num_instances) {
         return -1;
     }
     
-    // Start CGRA instance
-    return cgra_start(instance_id);
+    // Set start bit for the specified instance
+    driver->base_addr[REG_CGRA_CTRL] |= (1 << instance_id);
+    return 0;
+}
+
+int cgra_is_done(cgra_fifo_driver_t* driver, uint32_t instance_id) {
+    if (!driver || instance_id >= driver->num_instances) {
+        return -1;
+    }
+    
+    // Check done bit for the specified instance
+    return (driver->base_addr[REG_CGRA_STATUS] & (1 << instance_id)) ? 1 : 0;
+}
+
+int cgra_read_data(cgra_fifo_driver_t* driver, uint32_t instance_id, uint32_t* data) {
+    if (!driver || !data || instance_id >= driver->num_instances) {
+        return -1;
+    }
+    
+    // Check if data is ready for the specified instance
+    if (!(driver->base_addr[REG_CGRA_STATUS] & (1 << (instance_id + 16)))) {
+        return -1;
+    }
+    
+    // Read data
+    *data = driver->base_addr[REG_FIFO_DATA + instance_id];
+    return 0;
 }
 
 int cgra_fifo_wait_instance(uint8_t instance_id) {

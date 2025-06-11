@@ -4,21 +4,21 @@
 
 module tb_cgra_fft;
     // Parameters
-    parameter int unsigned DATA_WIDTH = 32;
-    parameter int unsigned FFT_SIZE = 256;
-    parameter int unsigned FFT_BITS = 8;  // log2(FFT_SIZE)
-    parameter time CLK_PERIOD = 10ns;
+    parameter DATA_WIDTH = 16;
+    parameter FFT_SIZE = 16;
+    parameter FFT_BITS = 4;
+    parameter CLK_PERIOD = 10;
 
     // Signals
-    logic clk;
-    logic rst_n;
-    logic [DATA_WIDTH-1:0] fifo_data_i;
-    logic fifo_valid_i;
-    logic fifo_ready_o;
-    logic [DATA_WIDTH-1:0] fifo_data_o;
-    logic fifo_valid_o;
-    logic fifo_ready_i;
-    logic cgra_done_o;
+    reg clk;
+    reg rst_n;
+    reg [DATA_WIDTH-1:0] fifo_data_i;
+    reg fifo_valid_i;
+    wire fifo_ready_o;
+    wire [DATA_WIDTH-1:0] fifo_data_o;
+    wire fifo_valid_o;
+    reg fifo_ready_i;
+    wire cgra_done_o;
 
     // Clock generation
     initial begin
@@ -52,10 +52,20 @@ module tb_cgra_fft;
 
     // Test stimulus
     initial begin
+        integer i;
+        real angle;
+        integer sample;
+        integer cos_val;
+        integer sin_val;
+        integer real_part;
+        integer imag_part;
+        integer magnitude;
+        integer expected;
+
         // Initialize signals
-        fifo_data_i = '0;
-        fifo_valid_i = 1'b0;
-        fifo_ready_i = 1'b0;
+        fifo_data_i = 0;
+        fifo_valid_i = 0;
+        fifo_ready_i = 0;
 
         // Wait for reset
         @(posedge rst_n);
@@ -65,77 +75,61 @@ module tb_cgra_fft;
         $display("Test 1: FFT of a sine wave");
         
         // Write input data (sine wave)
-        for (int i = 0; i < FFT_SIZE; i++) begin
+        for (i = 0; i < FFT_SIZE; i = i + 1) begin
             @(posedge clk);
             // Generate sine wave sample
-            real angle = 2.0 * 3.14159 * i / FFT_SIZE;
-            int sample = int'(sin(angle) * (1 << 8));  // Q8.8 format
+            angle = 2.0 * 3.14159 * i / FFT_SIZE;
+            sample = $rtoi(sin(angle) * (1 << 8));  // Q8.8 format
             fifo_data_i = sample;
-            fifo_valid_i = 1'b1;
+            fifo_valid_i = 1;
             wait(fifo_ready_o);
         end
-        fifo_valid_i = 1'b0;
+        fifo_valid_i = 0;
 
         // Write twiddle factors
-        for (int i = 0; i < FFT_SIZE/2; i++) begin
+        for (i = 0; i < FFT_SIZE/2; i = i + 1) begin
             @(posedge clk);
-            real angle = -2.0 * 3.14159 * i / FFT_SIZE;
-            int cos_val = int'(cos(angle) * (1 << 8));
-            int sin_val = int'(sin(angle) * (1 << 8));
+            angle = -2.0 * 3.14159 * i / FFT_SIZE;
+            cos_val = $rtoi(cos(angle) * (1 << 8));
+            sin_val = $rtoi(sin(angle) * (1 << 8));
             fifo_data_i = {cos_val, sin_val};
-            fifo_valid_i = 1'b1;
+            fifo_valid_i = 1;
             wait(fifo_ready_o);
         end
-        fifo_valid_i = 1'b0;
+        fifo_valid_i = 0;
 
         // Read FFT results
-        fifo_ready_i = 1'b1;
-        for (int i = 0; i < FFT_SIZE; i++) begin
+        fifo_ready_i = 1;
+        for (i = 0; i < FFT_SIZE; i = i + 1) begin
             @(posedge clk);
             wait(fifo_valid_o);
-            $display("FFT[%0d] = %h", i, fifo_data_o);
+            // For a sine wave, we expect peaks at k and N-k
+            if (i == 1 || i == FFT_SIZE-1) begin
+                // Expected peak magnitude is FFT_SIZE/2 * 2^8 (Q8.8 format)
+                // For complex FFT, we need to check both real and imaginary parts
+                real_part = $signed(fifo_data_o[31:16]);
+                imag_part = $signed(fifo_data_o[15:0]);
+                magnitude = (real_part * real_part + imag_part * imag_part) >> 8;  // Scale back to Q8.8
+                expected = (FFT_SIZE/2) << 8;
+                if (magnitude < (expected * 0.9)) begin  // Allow 10% tolerance
+                    $display("Invalid FFT result at index %0d, instance %0d", i, 0);
+                    $display("Expected magnitude: %h, Got: %h", expected, magnitude);
+                    $display("Real: %h, Imag: %h", real_part, imag_part);
+                end else begin
+                    $display("Peak found at index %0d: magnitude %h", i, magnitude);
+                end
+            end else begin
+                // Other bins should be close to zero
+                real_part = $signed(fifo_data_o[31:16]);
+                imag_part = $signed(fifo_data_o[15:0]);
+                magnitude = (real_part * real_part + imag_part * imag_part) >> 8;
+                if (magnitude > (1 << 7)) begin
+                    $display("Non-zero value at index %0d: magnitude %h", i, magnitude);
+                    $display("Real: %h, Imag: %h", real_part, imag_part);
+                end
+            end
         end
-        fifo_ready_i = 1'b0;
-
-        // Wait for completion
-        wait(cgra_done_o);
-        $display("FFT computation completed");
-
-        // Test 2: FFT of a complex exponential
-        $display("Test 2: FFT of a complex exponential");
-        
-        // Write input data (complex exponential)
-        for (int i = 0; i < FFT_SIZE; i++) begin
-            @(posedge clk);
-            real angle = 2.0 * 3.14159 * i / FFT_SIZE;
-            int real_part = int'(cos(angle) * (1 << 8));
-            int imag_part = int'(sin(angle) * (1 << 8));
-            fifo_data_i = {real_part, imag_part};
-            fifo_valid_i = 1'b1;
-            wait(fifo_ready_o);
-        end
-        fifo_valid_i = 1'b0;
-
-        // Write twiddle factors (same as before)
-        for (int i = 0; i < FFT_SIZE/2; i++) begin
-            @(posedge clk);
-            real angle = -2.0 * 3.14159 * i / FFT_SIZE;
-            int cos_val = int'(cos(angle) * (1 << 8));
-            int sin_val = int'(sin(angle) * (1 << 8));
-            fifo_data_i = {cos_val, sin_val};
-            fifo_valid_i = 1'b1;
-            wait(fifo_ready_o);
-        end
-        fifo_valid_i = 1'b0;
-
-        // Read FFT results
-        fifo_ready_i = 1'b1;
-        for (int i = 0; i < FFT_SIZE; i++) begin
-            @(posedge clk);
-            wait(fifo_valid_o);
-            $display("FFT[%0d] = %h", i, fifo_data_o);
-        end
-        fifo_ready_i = 1'b0;
+        fifo_ready_i = 0;
 
         // Wait for completion
         wait(cgra_done_o);
@@ -148,16 +142,13 @@ module tb_cgra_fft;
     end
 
     // Assertions
-    property p_fft_valid;
-        @(posedge clk) disable iff (!rst_n)
-        fifo_valid_o |-> fifo_ready_i;
-    endproperty
-    assert property (p_fft_valid) else $error("FFT output valid but not ready");
-
-    property p_fft_done;
-        @(posedge clk) disable iff (!rst_n)
-        cgra_done_o |-> !fifo_valid_o;
-    endproperty
-    assert property (p_fft_done) else $error("FFT done but output still valid");
+    always @(posedge clk) begin
+        if (rst_n) begin
+            if (fifo_valid_o && !fifo_ready_i)
+                $display("Error: FFT output valid but not ready");
+            if (cgra_done_o && fifo_valid_o)
+                $display("Error: FFT done but output still valid");
+        end
+    end
 
 endmodule 

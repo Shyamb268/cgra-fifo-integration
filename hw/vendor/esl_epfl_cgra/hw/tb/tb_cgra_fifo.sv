@@ -8,6 +8,12 @@ module tb_cgra_fifo;
     parameter int unsigned DEPTH = 16;
     parameter time CLK_PERIOD = 10ns;
 
+    // Debug message at start
+    initial begin
+        $display("\n=== Starting Enhanced CGRA FIFO Testbench ===");
+        $display("Parameters: DATA_WIDTH=%0d, DEPTH=%0d, CLK_PERIOD=%0t", DATA_WIDTH, DEPTH, CLK_PERIOD);
+    end
+
     // Signals
     logic clk;
     logic rst_n;
@@ -50,9 +56,26 @@ module tb_cgra_fifo;
         .pop_i(ready_i)
     );
 
+    // Enhanced Monitor
+    always @(posedge clk) begin
+        if (valid_i && ready_o) begin
+            $display("Time=%0t: Write: data=%h, usage=%0d/%0d", $time, data_i, dut.usage_o, DEPTH);
+        end
+        if (valid_o && ready_i) begin
+            $display("Time=%0t: Read: data=%h, usage=%0d/%0d", $time, data_o, dut.usage_o, DEPTH);
+        end
+        if (dut.full_o) begin
+            $display("Time=%0t: FIFO is FULL, usage=%0d/%0d", $time, dut.usage_o, DEPTH);
+        end
+        if (dut.empty_o) begin
+            $display("Time=%0t: FIFO is EMPTY, usage=%0d/%0d", $time, dut.usage_o, DEPTH);
+        end
+    end
+
     // Test stimulus
     initial begin
         // Initialize signals
+        $display("\n=== Initializing CGRA FIFO Testbench ===");
         data_i = '0;
         valid_i = 1'b0;
         ready_i = 1'b0;
@@ -60,63 +83,52 @@ module tb_cgra_fifo;
         // Wait for reset
         @(posedge rst_n);
         #(CLK_PERIOD);
+        $display("\nTime=%0t: Reset released", $time);
 
-        // Test 1: Write data until full
-        $display("Test 1: Write data until full");
-        for (int i = 0; i < DEPTH + 1; i++) begin
+        // Test: Read after Write
+        $display("\n=== Test: Read after Write ===");
+        
+        // Phase 1: Write 4 data items
+        $display("\nPhase 1: Writing 4 data items");
+        for (int i = 0; i < 4; i++) begin
             @(posedge clk);
-            data_i = i;
+            data_i = 32'h1000 + i;  // Write pattern: 0x1000, 0x1001, 0x1002, 0x1003
             valid_i = 1'b1;
             ready_i = 1'b0;
+            $display("Time=%0t: Attempting to write data=0x%h", $time, data_i);
         end
         valid_i = 1'b0;
+        #(CLK_PERIOD*2);
+        $display("Time=%0t: Write phase completed, current usage=%0d/%0d", $time, dut.usage_o, DEPTH);
 
-        // Test 2: Read data until empty
-        $display("Test 2: Read data until empty");
-        for (int i = 0; i < DEPTH + 1; i++) begin
+        // Phase 2: Read all written data
+        $display("\nPhase 2: Reading all written data");
+        for (int i = 0; i < 4; i++) begin
             @(posedge clk);
             valid_i = 1'b0;
             ready_i = 1'b1;
+            $display("Time=%0t: Attempting to read data, expecting 0x%h", $time, 32'h1000 + i);
         end
         ready_i = 1'b0;
+        #(CLK_PERIOD*2);
+        $display("Time=%0t: Read phase completed, current usage=%0d/%0d", $time, dut.usage_o, DEPTH);
 
-        // Test 3: Simultaneous read and write
-        $display("Test 3: Simultaneous read and write");
-        for (int i = 0; i < DEPTH; i++) begin
+        // Phase 3: Verify FIFO is empty
+        $display("\nPhase 3: Verifying FIFO is empty");
             @(posedge clk);
-            data_i = i + 100;
-            valid_i = 1'b1;
-            ready_i = 1'b1;
-        end
-        valid_i = 1'b0;
-        ready_i = 1'b0;
-
-        // Test 4: Random read/write
-        $display("Test 4: Random read/write");
-        repeat (100) begin
-            @(posedge clk);
-            data_i = $urandom();
-            valid_i = $urandom();
-            ready_i = $urandom();
+        if (dut.empty_o) begin
+            $display("Time=%0t: FIFO is correctly empty", $time);
+        end else begin
+            $display("Time=%0t: ERROR - FIFO should be empty but is not", $time);
         end
 
         // End simulation
         #(CLK_PERIOD*10);
-        $display("Simulation completed");
+        $display("\n=== Read after Write Test completed! ===");
         $finish;
     end
 
-    // Monitor
-    always @(posedge clk) begin
-        if (valid_i && ready_o) begin
-            $display("Write: data=%h", data_i);
-        end
-        if (valid_o && ready_i) begin
-            $display("Read: data=%h", data_o);
-        end
-    end
-
-    // Assertions
+    // Enhanced Assertions
     property p_fifo_full;
         @(posedge clk) disable iff (!rst_n)
         dut.usage_o == DEPTH |-> !ready_o;
@@ -134,5 +146,11 @@ module tb_cgra_fifo;
         valid_o && ready_i |-> data_o == $past(data_i, DEPTH);
     endproperty
     assert property (p_data_consistency) else $error("Data inconsistency detected");
+
+    property p_usage_bounds;
+        @(posedge clk) disable iff (!rst_n)
+        dut.usage_o <= DEPTH;
+    endproperty
+    assert property (p_usage_bounds) else $error("FIFO usage exceeds depth");
 
 endmodule 

@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Compiler and flags
-VCS = vcs
-VCS_FLAGS = -full64 -debug_all -sverilog -timescale=1ns/1ps
-VERDI = verdi
-VERDI_FLAGS = -sv -nologo
+IVERILOG = iverilog
+VVP = vvp
+IVERILOG_FLAGS = -g2012 -Wall -I../rtl
 
 # Source files
 RTL_DIR = ../rtl
@@ -19,6 +18,19 @@ SRC_FILES = \
     $(TB_DIR)/tb_cgra_fft.sv \
     $(TB_DIR)/tb_cgra_system.sv
 
+# Add all relevant RTL files for missing modules
+RTL_SRCS = \
+  /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/rtl/fifo.sv \
+  ../rtl/cgra_top.sv \
+  ../rtl/data_bus_handler.sv \
+  ../rtl/alu.sv \
+  ../rtl/cgra_controller.sv \
+  ../rtl/synchronizer.sv \
+  ../rtl/cgra_rcs.sv \
+  ../rtl/context_memory_decoder.sv \
+  ../rtl/cgra_pkg.sv \
+  ../rtl/reg_pkg.sv
+
 # Testbench targets
 TB_FIFO = tb_cgra_fifo
 TB_FFT = tb_cgra_fft
@@ -29,38 +41,32 @@ all: compile_fifo compile_fft compile_system
 
 # Compile targets
 compile_fifo:
-	$(VCS) $(VCS_FLAGS) -o $(TB_FIFO) $(SRC_FILES) -top $(TB_FIFO)
+	$(IVERILOG) $(IVERILOG_FLAGS) -o $(TB_FIFO) $(SRC_FILES) -top $(TB_FIFO)
 
 compile_fft:
-	$(VCS) $(VCS_FLAGS) -o $(TB_FFT) $(SRC_FILES) -top $(TB_FFT)
+	$(IVERILOG) $(IVERILOG_FLAGS) -o tb_cgra_fft \
+		$(RTL_SRCS) \
+		../sim/cgra_clock_gate.sv \
+		tb_cgra_fft.sv
 
 compile_system:
-	$(VCS) $(VCS_FLAGS) -o $(TB_SYSTEM) $(SRC_FILES) -top $(TB_SYSTEM)
+	$(IVERILOG) $(IVERILOG_FLAGS) -o $(TB_SYSTEM) $(SRC_FILES) -top $(TB_SYSTEM)
 
 # Run targets
 run_fifo: compile_fifo
-	./$(TB_FIFO)
+	$(VVP) $(TB_FIFO)
 
 run_fft: compile_fft
-	./$(TB_FFT)
+	$(VVP) $(TB_FFT)
 
 run_system: compile_system
-	./$(TB_SYSTEM)
-
-# Debug targets
-debug_fifo: compile_fifo
-	$(VERDI) $(VERDI_FLAGS) -ssf $(TB_FIFO).fsdb &
-
-debug_fft: compile_fft
-	$(VERDI) $(VERDI_FLAGS) -ssf $(TB_FFT).fsdb &
-
-debug_system: compile_system
-	$(VERDI) $(VERDI_FLAGS) -ssf $(TB_SYSTEM).fsdb &
+	$(VVP) $(TB_SYSTEM)
 
 # Clean target
 clean:
 	rm -rf $(TB_FIFO) $(TB_FFT) $(TB_SYSTEM)
 	rm -rf *.log *.vpd *.fsdb *.key
 	rm -rf simv* csrc* *.conf
+	rm -rf *.vvp
 
-.PHONY: all compile_fifo compile_fft compile_system run_fifo run_fft run_system debug_fifo debug_fft debug_system clean 
+.PHONY: all compile_fifo compile_fft compile_system run_fifo run_fft run_system clean 

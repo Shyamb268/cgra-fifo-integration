@@ -2,9 +2,7 @@
 // Solderpad Hardware License, Version 2.1, see LICENSE.md for details.
 // SPDX-License-Identifier: Apache-2.0 WITH SHL-2.1
 
-module alu
-  import cgra_pkg::*;
-(
+module alu (
   input  logic [         DP_WIDTH-1:0] operand_a_i,
   input  logic [         DP_WIDTH-1:0] operand_b_i,
   input  logic [       ALU_N_FLAG-1:0] flag_i,
@@ -16,19 +14,15 @@ module alu
   output logic                         alu_stall_o
 );
 
-  import cgra_pkg::*;
-
   logic [DP_WIDTH-1:0] operand_a_rev;
   logic [  DP_WIDTH:0] operand_b_neg;
 
   // bit reverse operand_a for left shifts and bit counting
-  generate
-    genvar k;
-    for(k = 0; k < 32; k++)
-    begin : g_revloop
-      assign operand_a_rev[k] = operand_a_i[31-k];
-    end
-  endgenerate
+  genvar k;
+  for(k = 0; k < 32; k++)
+  begin : g_revloop
+    assign operand_a_rev[k] = operand_a_i[31-k];
+  end
 
   /////////////////////////////////////
   //      _       _     _            //
@@ -115,19 +109,17 @@ module alu
   logic [           DP_WIDTH-1:0] operand_a_mult;
   logic [           DP_WIDTH-1:0] operand_b_mult;
 
-  // Use dummy read module ports to easily find multiplier input operands during asic flow
-  generate
-    for(genvar j=0; j<DP_WIDTH; j++) begin : mult_read_gen
-      read alu_mult_opa_i (
-        .d_i (operand_a_i[j]),
-        .d_o (operand_a_mult[j])
-      );
-      read alu_mult_opb_i (
-        .d_i (operand_b_i[j]),
-        .d_o (operand_b_mult[j])
-      );
-    end
-  endgenerate
+  genvar gen_k;
+
+  // Bit-reverse operand a
+  for (gen_k = 0; gen_k < DP_WIDTH; gen_k++) begin : gen_bit_reverse
+    assign operand_a_mult[gen_k] = operand_a_i[DP_WIDTH-1-gen_k];
+  end
+
+  // Bit-reverse operand b
+  for (gen_k = 0; gen_k < DP_WIDTH; gen_k++) begin : gen_bit_reverse_b
+    assign operand_b_mult[gen_k] = operand_b_i[DP_WIDTH-1-gen_k];
+  end
 
   always_comb
   begin
@@ -149,14 +141,17 @@ module alu
   assign mult_result_full = $signed(mult_in_a) * $signed(mult_in_b);
   assign mult_result      = mult_e ? mult_result_full[DP_WIDTH-1:0] : '0;
 
-  localparam NBIT_DEC = 15;
-  localparam NBIT_INT = 16;
+  localparam NBIT_DEC = 8;  // Q8.8 format decimal bits
+  localparam NBIT_INT = 8;  // Q8.8 format integer bits
   // localparam SIGN_BIT = 1;
 
-  assign fxp_mult_scaled = mult_result_full[NBIT_INT+2*NBIT_DEC:NBIT_DEC-1];
+  // For Q8.8 multiplication:
+  // Input: Q8.8 * Q8.8 = Q16.16
+  // Output: Q8.8 (shift right by 8 bits)
+  assign fxp_mult_scaled = mult_result_full[2*DP_WIDTH-1:NBIT_DEC];
 
   // Without rounding
-  assign fxp_mult_result = fxp_mult_e ? fxp_mult_scaled[DP_WIDTH:1] : '0;
+  assign fxp_mult_result = fxp_mult_e ? fxp_mult_scaled[DP_WIDTH-1:0] : '0;
   // // With rounding
   // assign fxp_mult_result = adder_result_full[DP_WIDTH:1];
 
@@ -218,11 +213,11 @@ module alu
   assign shift_right_result        = shift_right_result_33b[DP_WIDTH-1:0];
 
   // bit reverse the shift_right_result for left shifts
-  genvar       j;
+  genvar gen_shiftrev;
   generate
-    for(j = 0; j < DP_WIDTH; j++)
+    for(gen_shiftrev = 0; gen_shiftrev < DP_WIDTH; gen_shiftrev++)
     begin : g_resrevloop
-      assign shift_left_result[j] = shift_right_result[31-j];
+      assign shift_left_result[gen_shiftrev] = shift_right_result[31-gen_shiftrev];
     end
   endgenerate
 

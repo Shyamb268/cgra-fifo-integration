@@ -6,7 +6,10 @@ module heepsilon_top #(
     parameter COREV_PULP = 0,
     parameter FPU        = 0,
     parameter ZFINX      = 0,
-    parameter X_EXT      = 0
+    parameter X_EXT      = 0,
+    parameter NUM_CGRA_INSTANCES = 2,
+    parameter DATA_WIDTH = 32,
+    parameter FIFO_DEPTH = 16
 ) (
     inout logic clk_i,
     inout logic rst_ni,
@@ -44,7 +47,21 @@ module heepsilon_top #(
     inout logic       spi2_sck_o,
 
     inout logic i2c_scl_io,
-    inout logic i2c_sda_io
+    inout logic i2c_sda_io,
+
+    // Host interface
+    input  logic                     host_wr_en,
+    input  logic [DATA_WIDTH-1:0]    host_wr_data,
+    output logic                     host_wr_ready,
+    
+    // CGRA control interface
+    input  logic [NUM_CGRA_INSTANCES-1:0] cgra_start,
+    output logic [NUM_CGRA_INSTANCES-1:0] cgra_done,
+    
+    // CGRA data interface
+    output logic [NUM_CGRA_INSTANCES-1:0] cgra_rd_en,
+    output logic [DATA_WIDTH-1:0]         cgra_rd_data [NUM_CGRA_INSTANCES],
+    input  logic [NUM_CGRA_INSTANCES-1:0] cgra_rd_ready
 );
 
   import obi_pkg::*;
@@ -269,6 +286,24 @@ module heepsilon_top #(
 
       .external_subsystem_rst_no(external_subsystem_rst_n),
       .external_ram_banks_set_retentive_no(external_ram_banks_set_retentive_n)
+  );
+
+  // CGRA FIFO wrapper instance
+  cgra_fifo_wrapper #(
+      .NUM_INSTANCES(NUM_CGRA_INSTANCES),
+      .DATA_WIDTH(DATA_WIDTH),
+      .FIFO_DEPTH(FIFO_DEPTH)
+  ) cgra_fifo_wrapper_inst (
+      .clk            (clk_i),
+      .rst_n          (rst_ni),
+      .cgra_start     (cgra_start),
+      .cgra_done      (cgra_done),
+      .fifo_wr_en     (host_wr_en),
+      .fifo_wr_data   (host_wr_data),
+      .fifo_full      (host_wr_ready),
+      .cgra_rd_en     (cgra_rd_en),
+      .cgra_rd_data   (cgra_rd_data),
+      .cgra_rd_ready  (cgra_rd_ready)
   );
 
 endmodule  // heepsilon_pkg
