@@ -11,10 +11,10 @@ include ../../common.mk
 APP = cgra_fft
 
 # Source files
-SRCS = main.c
+SRCS = main.c fxp.c
 
 # Include paths
-INCLUDES += -I$(SW_DIR)/external/drivers/cgra
+INCLUDES += -I$(SW_DIR)/external/drivers/cgra -I.
 
 # Build the application
 all: $(APP)

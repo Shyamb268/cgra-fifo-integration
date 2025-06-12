@@ -25,6 +25,12 @@ module tb_cgra_fft;
     wire [NUM_INSTANCES-1:0] cgra_rd_ready;
     wire [DATA_WIDTH-1:0]    cgra_result_data [NUM_INSTANCES];
     
+    // Waveform dump file
+    initial begin
+        $dumpfile("cgra_fft_wave.vcd");
+        $dumpvars(0, tb_cgra_fft);
+    end
+    
     // Instantiate the CGRA FIFO wrapper
     cgra_fifo_wrapper #(
         .NUM_INSTANCES(NUM_INSTANCES),
