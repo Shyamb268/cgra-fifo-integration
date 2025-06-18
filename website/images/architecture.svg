@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="800" height="600" fill="#f5f6fa"/>
+    
+    <!-- CGRA Array -->
+    <g transform="translate(100,100)">
+        <!-- PE Grid -->
+        <rect x="0" y="0" width="400" height="400" fill="#2c3e50" rx="10"/>
+        <text x="200" y="30" fill="white" text-anchor="middle" font-size="20">CGRA Array (4x4)</text>
+        
+        <!-- PE Elements -->
+        <g transform="translate(50,50)">
+            <!-- PE Grid -->
+            <rect x="0" y="0" width="300" height="300" fill="#3498db" opacity="0.3"/>
+            
+            <!-- Individual PEs -->
+            <g transform="translate(20,20)">
+                <!-- Row 1 -->
+                <rect x="0" y="0" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="80" y="0" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="160" y="0" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="240" y="0" width="60" height="60" fill="#e74c3c" rx="5"/>
+                
+                <!-- Row 2 -->
+                <rect x="0" y="80" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="80" y="80" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="160" y="80" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="240" y="80" width="60" height="60" fill="#e74c3c" rx="5"/>
+                
+                <!-- Row 3 -->
+                <rect x="0" y="160" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="80" y="160" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="160" y="160" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="240" y="160" width="60" height="60" fill="#e74c3c" rx="5"/>
+                
+                <!-- Row 4 -->
+                <rect x="0" y="240" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="80" y="240" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="160" y="240" width="60" height="60" fill="#e74c3c" rx="5"/>
+                <rect x="240" y="240" width="60" height="60" fill="#e74c3c" rx="5"/>
+            </g>
+        </g>
+    </g>
+    
+    <!-- FIFO System -->
+    <g transform="translate(550,100)">
+        <rect x="0" y="0" width="200" height="400" fill="#2c3e50" rx="10"/>
+        <text x="100" y="30" fill="white" text-anchor="middle" font-size="20">FIFO System</text>
+        
+        <!-- FIFO Elements -->
+        <g transform="translate(20,50)">
+            <rect x="0" y="0" width="160" height="60" fill="#3498db" rx="5"/>
+            <text x="80" y="35" fill="white" text-anchor="middle">Input FIFO</text>
+            
+            <rect x="0" y="80" width="160" height="60" fill="#3498db" rx="5"/>
+            <text x="80" y="115" fill="white" text-anchor="middle">Processing FIFO</text>
+            
+            <rect x="0" y="160" width="160" height="60" fill="#3498db" rx="5"/>
+            <text x="80" y="195" fill="white" text-anchor="middle">Output FIFO</text>
+            
+            <rect x="0" y="240" width="160" height="60" fill="#3498db" rx="5"/>
+            <text x="80" y="275" fill="white" text-anchor="middle">Control FIFO</text>
+        </g>
+    </g>
+    
+    <!-- Memory System -->
+    <g transform="translate(100,550)">
+        <rect x="0" y="0" width="650" height="100" fill="#2c3e50" rx="10"/>
+        <text x="325" y="30" fill="white" text-anchor="middle" font-size="20">Memory System</text>
+        
+        <!-- Memory Banks -->
+        <g transform="translate(20,40)">
+            <rect x="0" y="0" width="140" height="40" fill="#3498db" rx="5"/>
+            <text x="70" y="25" fill="white" text-anchor="middle">Local Memory</text>
+            
+            <rect x="170" y="0" width="140" height="40" fill="#3498db" rx="5"/>
+            <text x="240" y="25" fill="white" text-anchor="middle">Shared Memory</text>
+            
+            <rect x="340" y="0" width="140" height="40" fill="#3498db" rx="5"/>
+            <text x="410" y="25" fill="white" text-anchor="middle">Global Memory</text>
+        </g>
+    </g>
+    
+    <!-- Connection Lines -->
+    <g stroke="#2c3e50" stroke-width="2" fill="none">
+        <!-- CGRA to FIFO -->
+        <path d="M500,300 L550,300"/>
+        <!-- FIFO to Memory -->
+        <path d="M650,300 L650,550"/>
+        <!-- CGRA to Memory -->
+        <path d="M300,500 L300,550"/>
+    </g>
+</svg> 

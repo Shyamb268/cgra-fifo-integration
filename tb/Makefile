@@ -22,13 +22,24 @@ TB_FILES = $(TB_DIR)/tb_util.svh \
 TB_FIFO_EXE = tb_fifo.vvp
 TB_CGRA_FIFO_EXE = tb_cgra_fifo.vvp
 TEST_EXE = tb_cgra_fft.vvp
+SIM_EXE = cgra_fifo_sim
 
 # Default target
-all: $(TB_FIFO_EXE) $(TB_CGRA_FIFO_EXE) $(TEST_EXE)
+all: $(TB_FIFO_EXE) $(TB_CGRA_FIFO_EXE) $(TEST_EXE) $(SIM_EXE)
 
 # Clean build artifacts
 clean:
-	rm -f *.vvp *.vcd $(TEST_EXE) *.log *.vpd *.key
+	rm -f *.vvp *.vcd $(TEST_EXE) $(SIM_EXE) *.log *.vpd *.key
+
+# Compile main simulation
+sim: $(SIM_EXE)
+
+$(SIM_EXE): cgra_fifo_tb.sv ../rtl/cgra_fifo_wrapper.sv ../rtl/fifo.sv ../rtl/cgra.sv
+	$(IVERILOG) $(IVERILOG_FLAGS) -o $@ cgra_fifo_tb.sv ../rtl/cgra_fifo_wrapper.sv ../rtl/fifo.sv ../rtl/cgra.sv
+
+# Run main simulation
+run_sim: $(SIM_EXE)
+	$(VVP) $(SIM_EXE)
 
 # Compile FIFO testbench
 $(TB_FIFO_EXE): $(SRC_FILES) $(TB_FILES)
@@ -57,4 +68,4 @@ test_cgra_fft: $(TEST_EXE)
 # Run all tests
 test: test_fifo test_cgra_fifo test_cgra_fft
 
-.PHONY: all clean test test_fifo test_cgra_fifo test_cgra_fft 
+.PHONY: all clean test test_fifo test_cgra_fifo test_cgra_fft sim run_sim 

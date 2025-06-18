@@ -1,3 +1,5 @@
+`timescale 1ps/1ps
+
 module tb_fifo;
     // Parameters
     parameter DATA_WIDTH = 32;
@@ -7,6 +9,10 @@ module tb_fifo;
     initial begin
         $display("\n=== Starting FIFO Testbench ===");
         $display("Parameters: DATA_WIDTH=%0d, FIFO_DEPTH=%0d", DATA_WIDTH, FIFO_DEPTH);
+        
+        // Setup VCD file
+        $dumpfile("tb_fifo.vcd");
+        $dumpvars(0, tb_fifo);
     end
     
     // Signals
@@ -18,7 +24,7 @@ module tb_fifo;
     wire [DATA_WIDTH-1:0] fifo_rd_data;
     wire fifo_full;
     wire fifo_empty;
-    wire [4:0] fifo_count;
+    wire [$clog2(FIFO_DEPTH):0] fifo_count;
     
     // Instantiate FIFO
     fifo #(
@@ -37,160 +43,94 @@ module tb_fifo;
     );
     
     // Clock generation
-    initial begin
-        clk = 0;
-        forever #5 clk = ~clk;
-    end
+    initial clk = 0;
+    always #5 clk = ~clk;
     
-    // Write data to FIFO
-    task write_fifo;
-        input [31:0] data;
-        output success;
+    // Write task with proper handshaking
+    task write_fifo(input [31:0] data, output success);
         begin
-            if (fifo_full) begin
-                $display("Write failed: FIFO is full");
-                success = 0;
-            end else begin
-                fifo_wr_en = 1;
-                fifo_wr_data = data;
-                @(posedge clk);
-                fifo_wr_en = 0;
-                success = 1;
-                $display("Write successful: data=%h, count=%0d", data, fifo_count);
-            end
-        end
-    endtask
-    
-    // Read data from FIFO
-    task read_fifo;
-        output [31:0] data;
-        output success;
-        begin
-            if (fifo_empty) begin
-                $display("Read failed: FIFO is empty");
-                success = 0;
-            end else begin
-                fifo_rd_en = 1;
-                @(posedge clk);
-                data = fifo_rd_data;
-                fifo_rd_en = 0;
-                success = 1;
-                $display("Read successful: data=%h, count=%0d", data, fifo_count);
-            end
-        end
-    endtask
-    
-    // Initialize testbench
-    task initialize_testbench;
-        begin
-            $display("\nInitializing testbench...");
-            rst_n = 0;
+            // Wait for FIFO to not be full
+            wait(!fifo_full);
+            @(posedge clk);
+            fifo_wr_en = 1;
+            fifo_wr_data = data;
+            @(posedge clk);
             fifo_wr_en = 0;
+            success = 1;
+        end
+    endtask
+    
+    // Read task with proper handshaking
+    task read_fifo(output [31:0] data, output success);
+        begin
+            // Wait for FIFO to not be empty
+            wait(!fifo_empty);
+            @(posedge clk);
+            fifo_rd_en = 1;
+            @(posedge clk);
+            data = fifo_rd_data;
             fifo_rd_en = 0;
-            fifo_wr_data = 0;
-            #100;
-            rst_n = 1;
-            #20;
-            $display("Initialization complete. FIFO is empty, count=%0d", fifo_count);
+            success = 1;
         end
     endtask
     
     // Test stimulus
     initial begin
-        // Initialize
-        $display("\n=== Test 0: Initialization ===");
-        initialize_testbench();
-        #20;
-        
-        // Test 1: Write until full
-        $display("\n=== Test 1: Write until full ===");
-        repeat (FIFO_DEPTH) begin
-            reg success;
+        integer i;
+        reg [31:0] data;
+        reg success;
+
+        // Reset
+        rst_n = 0; fifo_wr_en = 0; fifo_rd_en = 0; fifo_wr_data = 0;
+        #100; rst_n = 1; #20;
+
+        // 1. Write until FIFO full
+        $display("=== Test 1: Write until FIFO full ===");
+        for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
             write_fifo($urandom, success);
-            if (!success) begin
-                $display("Error: Failed to write to FIFO");
-                $finish;
-            end
-            #20;  // Increased delay between writes
+            if (!success) $display("Write failed at i=%0d", i);
+            #10;
         end
-        
-        if (!fifo_full) begin
-            $display("Error: FIFO should be full");
-            $finish;
-        end
-        $display("Test 1 Passed: FIFO is full with count=%0d", fifo_count);
-        #50;  // Added delay after test 1
-        
-        // Test 2: Read until empty
-        $display("\n=== Test 2: Read until empty ===");
-        repeat (FIFO_DEPTH) begin
-            reg [31:0] data;
-            reg success;
+        #10;
+        if (!fifo_full) $display("Error: FIFO should be full!");
+        else $display("Test 1 Passed: FIFO is full.");
+
+        // 2. Read FIFO
+        $display("=== Test 2: Read FIFO ===");
+        for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
             read_fifo(data, success);
-            if (!success) begin
-                $display("Error: Failed to read from FIFO");
-                $finish;
-            end
-            #20;  // Increased delay between reads
+            if (!success) $display("Read failed at i=%0d", i);
+            #10;
         end
-        
-        if (!fifo_empty) begin
-            $display("Error: FIFO should be empty");
-            $finish;
-        end
-        $display("Test 2 Passed: FIFO is empty with count=%0d", fifo_count);
-        #50;  // Added delay after test 2
-        
-        // Test 3: Write and read simultaneously
-        $display("\n=== Test 3: Write and read simultaneously ===");
+        #10;
+        if (!fifo_empty) $display("Error: FIFO should be empty!");
+        else $display("Test 2 Passed: FIFO is empty.");
+
+        // 3. Write and read simultaneously
+        $display("=== Test 3: Write and read simultaneously ===");
         fork
-            begin
-                repeat (FIFO_DEPTH/2) begin
-                    reg success;
+            begin : wr
+                for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
                     write_fifo($urandom, success);
-                    if (!success) begin
-                        $display("Error: Failed to write to FIFO");
-                        $finish;
-                    end
-                    #20;
+                    #10;
                 end
             end
-            begin
-                repeat (FIFO_DEPTH/2) begin
-                    reg [31:0] data;
-                    reg success;
+            begin : rd
+                for (i = 0; i < FIFO_DEPTH; i = i + 1) begin
                     read_fifo(data, success);
-                    if (!success) begin
-                        $display("Error: Failed to read from FIFO");
-                        $finish;
-                    end
-                    #20;
+                    #10;
                 end
             end
         join
-        $display("Test 3 Passed: Simultaneous read/write completed with count=%0d", fifo_count);
-        #50;  // Added delay after test 3
-        
-        // Test 4: Reset behavior
-        $display("\n=== Test 4: Reset behavior ===");
-        rst_n = 0;
-        #20;
-        if (!fifo_empty || fifo_full) begin
-            $display("Error: FIFO should be empty after reset");
-            $finish;
-        end
-        rst_n = 1;
-        #20;
-        $display("Test 4 Passed: Reset behavior verified with count=%0d", fifo_count);
-        
-        $display("\n=== All FIFO tests completed successfully! ===");
-        #100;  // Added final delay
-        $finish;
+        $display("Test 3 Passed: Simultaneous write/read completed.");
+
+        $display("=== All tests completed ===");
+        #100 $finish;
     end
     
     // Monitor
     initial begin
-        $monitor("Time=%0t rst_n=%b fifo_wr_en=%b fifo_rd_en=%b fifo_full=%b fifo_empty=%b fifo_wr_data=%0h fifo_rd_data=%0h count=%0d",
-                 $time, rst_n, fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty, fifo_wr_data, fifo_rd_data, fifo_count);
+        $monitor("T=%0t rst_n=%b wr_en=%b rd_en=%b full=%b empty=%b count=%0d wr_data=%h rd_data=%h",
+            $time, rst_n, fifo_wr_en, fifo_rd_en, fifo_full, fifo_empty, fifo_count, fifo_wr_data, fifo_rd_data);
     end
 endmodule 

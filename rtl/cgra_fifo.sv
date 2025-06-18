@@ -15,7 +15,7 @@ module cgra_fifo #(
     output logic [DATA_WIDTH-1:0]    fifo_rd_data,
     output logic                     fifo_full,
     output logic                     fifo_empty,
-    output logic [DATA_WIDTH-1:0]    fifo_count,
+    output logic [$clog2(FIFO_DEPTH):0] fifo_count,
     
     // CGRA interface
     input  logic [NUM_INSTANCES-1:0] cgra_start,
@@ -45,7 +45,7 @@ module cgra_fifo #(
     genvar i;
     generate
         for (i = 0; i < NUM_INSTANCES; i = i + 1) begin : cgra_instances
-            // CGRA instance
+            // CGRA instance - Fixed port connections
             cgra #(
                 .DATA_WIDTH(DATA_WIDTH)
             ) cgra_inst (
@@ -53,9 +53,10 @@ module cgra_fifo #(
                 .rst_n(rst_n),
                 .start(cgra_start[i]),
                 .done(cgra_done[i]),
-                .rd_en(cgra_rd_en[i]),
-                .rd_ready(cgra_rd_ready[i]),
-                .rd_data(cgra_rd_data[i])
+                .data_valid(cgra_rd_en[i]),      // Fixed: rd_en -> data_valid
+                .data_ready(cgra_rd_ready[i]),    // Fixed: rd_ready -> data_ready
+                .data_in(fifo_rd_data),           // Fixed: rd_data -> data_in, using FIFO output
+                .result_data(cgra_rd_data[i])     // Fixed: rd_data -> result_data
             );
         end
     endgenerate

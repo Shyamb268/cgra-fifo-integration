@@ -23,6 +23,20 @@ int main() {
         return -1;
     }
     
+    // Configure instances
+    for (i = 0; i < NUM_INSTANCES; i++) {
+        cgra_fifo_config_t config = {
+            .instance_id = i,
+            .kernel_id = 0,
+            .base_addr = 0x1000 * i
+        };
+        
+        if (cgra_fifo_configure(&config) != 0) {
+            printf("Failed to configure instance %d\n", i);
+            return -1;
+        }
+    }
+    
     // Write test data to FIFO
     for (i = 0; i < TEST_DATA_SIZE; i++) {
         ret = cgra_fifo_write(&driver, test_data[i]);

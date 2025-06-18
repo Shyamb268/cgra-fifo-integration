@@ -16,10 +16,11 @@ module cgra_fifo_wrapper #(
     input  logic                     fifo_wr_en,
     input  logic [DATA_WIDTH-1:0]    fifo_wr_data,
     output logic                     fifo_full,
+    output logic [$clog2(FIFO_DEPTH):0] fifo_count,
     
     // CGRA data interface
-    output logic [NUM_INSTANCES-1:0] cgra_rd_en,
-    input  logic [NUM_INSTANCES-1:0] cgra_rd_ready,
+    input  logic [NUM_INSTANCES-1:0] cgra_result_rd_en,  // Read enable for results
+    output logic [NUM_INSTANCES-1:0] cgra_result_ready,  // Result ready signal
     output logic [DATA_WIDTH-1:0]    cgra_result_data [NUM_INSTANCES]
 );
 
@@ -28,7 +29,17 @@ module cgra_fifo_wrapper #(
     logic [DATA_WIDTH-1:0]    fifo_dout;
     logic                     fifo_empty;
     
-    // Instantiate FIFO
+    // CGRA interface signals
+    logic [NUM_INSTANCES-1:0] cgra_data_valid;
+    logic [NUM_INSTANCES-1:0] cgra_data_ready;
+    logic [DATA_WIDTH-1:0]    cgra_data_in [NUM_INSTANCES];
+    logic [DATA_WIDTH-1:0]    cgra_result [NUM_INSTANCES];
+    
+    // Arbitration logic for FIFO reads
+    logic [NUM_INSTANCES-1:0] fifo_rd_request;
+    logic [NUM_INSTANCES-1:0] fifo_rd_grant;
+    
+    // Single FIFO instance
     fifo #(
         .DATA_WIDTH(DATA_WIDTH),
         .DEPTH(FIFO_DEPTH)
@@ -40,28 +51,53 @@ module cgra_fifo_wrapper #(
         .din    (fifo_wr_data),
         .dout   (fifo_dout),
         .full   (fifo_full),
-        .empty  (fifo_empty)
+        .empty  (fifo_empty),
+        .count  (fifo_count)
     );
     
-    // OR all cgra_rd_en signals for FIFO read enable
-    assign fifo_rd_en = |cgra_rd_en;
+    // FIFO read arbitration - priority-based (instance 0 has highest priority)
+    always_comb begin
+        fifo_rd_en = 0;
+        fifo_rd_grant = 0;
+        
+        // Simple priority arbitration - first instance gets priority
+        if (fifo_rd_request[0] && !fifo_empty) begin
+            fifo_rd_en = 1;
+            fifo_rd_grant[0] = 1;
+        end else if (fifo_rd_request[1] && !fifo_empty) begin
+            fifo_rd_en = 1;
+            fifo_rd_grant[1] = 1;
+        end
+    end
+    
+    // FIFO read request logic
+    assign fifo_rd_request = cgra_data_ready & ~fifo_empty;
 
+    // CGRA instances
     genvar i;
     generate
-        for (i = 0; i < NUM_INSTANCES; i++) begin : gen_cgra
+        for (i = 0; i < NUM_INSTANCES; i = i + 1) begin : gen_cgra
+            // Data flow logic
+            assign cgra_data_valid[i] = fifo_rd_grant[i];  // Data is valid when this instance gets FIFO access
+            assign cgra_data_in[i] = fifo_dout;            // Data from FIFO to CGRA
+            
             cgra #(
                 .DATA_WIDTH(DATA_WIDTH)
             ) cgra_inst (
-                .clk      (clk),
-                .rst_n    (rst_n),
-                .start    (cgra_start[i]),
-                .done     (cgra_done[i]),
-                .rd_en    (cgra_rd_en[i]),
-                .rd_ready (cgra_rd_ready[i]),
-                .rd_data  (fifo_dout),
-                .result_data (cgra_result_data[i])
+                .clk         (clk),
+                .rst_n       (rst_n),
+                .start       (cgra_start[i]),
+                .done        (cgra_done[i]),
+                .data_valid  (cgra_data_valid[i]),
+                .data_ready  (cgra_data_ready[i]),
+                .data_in     (cgra_data_in[i]),
+                .result_data (cgra_result[i])
             );
+            
+            // Result interface
+            assign cgra_result_data[i] = cgra_result[i];
+            assign cgra_result_ready[i] = cgra_done[i];  // Result ready when CGRA is done
         end
     endgenerate
 
-endmodule 
+endmodule

@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CGRA-FIFO Integration Project</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/themes/prism-tomorrow.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav>
+        <div class="nav-content">
+            <div class="logo">CGRA-FIFO Integration</div>
+            <ul class="nav-links">
+                <li><a href="#overview">Overview</a></li>
+                <li><a href="#architecture">Architecture</a></li>
+                <li><a href="#implementation">Implementation</a></li>
+                <li><a href="#flow">Flow</a></li>
+                <li><a href="#modifications">Modifications</a></li>
+                <li><a href="#impact">Impact</a></li>
+                <li><a href="#conclusion">Conclusion</a></li>
+            </ul>
+            <div class="nav-toggle">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section id="overview" class="section">
+            <div class="container">
+                <h2>Project Overview</h2>
+                <div class="overview-content">
+                    <div class="overview-text">
+                        <p>The CGRA-FIFO Integration project implements a high-performance computing system combining Coarse-Grained Reconfigurable Array (CGRA) with advanced FIFO (First-In-First-Out) buffer management. This integration enables efficient data processing and memory management for complex computational tasks.</p>
+                        
+                        <div class="key-features">
+                            <h3>Key Features</h3>
+                            <ul>
+                                <li>High-performance CGRA architecture with configurable processing elements</li>
+                                <li>Advanced FIFO buffer system with multiple channels</li>
+                                <li>Efficient memory hierarchy with local, shared, and global memory</li>
+                                <li>Real-time data processing capabilities</li>
+                                <li>Configurable interconnect network</li>
+                            </ul>
+                        </div>
+
+                        <div class="performance-metrics">
+                            <h3>Performance Metrics</h3>
+                            <div class="metrics-grid">
+                                <div class="metric-card">
+                                    <h4>Processing Speed</h4>
+                                    <p>500 MHz</p>
+                                </div>
+                                <div class="metric-card">
+                                    <h4>Memory Bandwidth</h4>
+                                    <p>32 GB/s</p>
+                                </div>
+                                <div class="metric-card">
+                                    <h4>Power Efficiency</h4>
+                                    <p>2.5 W</p>
+                                </div>
+                                <div class="metric-card">
+                                    <h4>Area Utilization</h4>
+                                    <p>85%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="section">
+            <div class="container">
+                <h2>System Architecture</h2>
+                <div class="architecture-content">
+                    <div class="system-diagram">
+                        <img src="images/architecture.svg" alt="System Architecture Diagram">
+                    </div>
+                    
+                    <div class="architecture-details">
+                        <div class="component-card">
+                            <h3>Processing Elements (PEs)</h3>
+                            <div class="tech-specs">
+                                <ul>
+                                    <li>32-bit ALU with SIMD support</li>
+                                    <li>32KB local memory per PE</li>
+                                    <li>Configurable pipeline stages (2-5)</li>
+                                    <li>Power consumption: 100mW per PE</li>
+                                    <li>Clock frequency: 500MHz</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="component-card">
+                            <h3>Interconnect Network</h3>
+                            <div class="tech-specs">
+                                <ul>
+                                    <li>Mesh topology with bidirectional links</li>
+                                    <li>2-cycle routing latency</li>
+                                    <li>Virtual channel support (4 channels)</li>
+                                    <li>Bandwidth: 32 bits per cycle</li>
+                                    <li>Adaptive routing capability</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="component-card">
+                            <h3>Memory Hierarchy</h3>
+                            <div class="tech-specs">
+                                <ul>
+                                    <li>Local Memory: 32KB per PE</li>
+                                    <li>Shared Memory: 1MB</li>
+                                    <li>Global Memory: 4GB with DMA</li>
+                                    <li>ECC protection</li>
+                                    <li>Memory bandwidth: 32GB/s</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <div class="component-card">
+                            <h3>FIFO System</h3>
+                            <div class="tech-specs">
+                                <ul>
+                                    <li>Configurable depth (32-1024 entries)</li>
+                                    <li>Data width: 32/64 bits</li>
+                                    <li>Error detection and correction</li>
+                                    <li>Backpressure support</li>
+                                    <li>Multiple priority levels</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="implementation" class="section">
+            <div class="container">
+                <h2>Implementation Details</h2>
+                <div class="implementation-content">
+                    <div class="implementation-overview">
+                        <h3>Implementation Process</h3>
+                        <div class="implementation-steps">
+                            <div class="step-card">
+                                <h4>Environment Setup</h4>
+                                <div class="step-details">
+                                    <h5>Required Tools</h5>
+                                    <ul>
+                                        <li>Verilog HDL</li>
+                                        <li>Vivado 2023.1</li>
+                                        <li>Python 3.8+</li>
+                                        <li>GCC 9.0+</li>
+                                    </ul>
+                                    <h5>Environment Variables</h5>
+                                    <pre><code class="language-bash">export CGRA_ROOT=/path/to/cgra
+export FIFO_ROOT=/path/to/fifo
+export SIM_ROOT=/path/to/simulation</code></pre>
+                                </div>
+                            </div>
+
+                            <div class="step-card">
+                                <h4>FIFO Implementation</h4>
+                                <div class="step-details">
+                                    <h5>Key Features</h5>
+                                    <ul>
+                                        <li>Dual-clock domain</li>
+                                        <li>Configurable depth</li>
+                                        <li>Error detection</li>
+                                        <li>Status monitoring</li>
+                                    </ul>
+                                    <h5>Timing Constraints</h5>
+                                    <pre><code class="language-tcl">create_clock -period 2.000 -name sys_clk [get_ports sys_clk]
+set_clock_groups -asynchronous -group [get_clocks sys_clk] -group [get_clocks fifo_clk]</code></pre>
+                                </div>
+                            </div>
+
+                            <div class="step-card">
+                                <h4>CGRA Configuration</h4>
+                                <div class="step-details">
+                                    <h5>PE Configuration</h5>
+                                    <pre><code class="language-verilog">module pe_config (
+    input wire clk,
+    input wire rst_n,
+    input wire [31:0] config_data,
+    output reg [31:0] status
+);</code></pre>
+                                    <h5>Status Register</h5>
+                                    <ul>
+                                        <li>PE ID: [31:24]</li>
+                                        <li>Operation Mode: [23:16]</li>
+                                        <li>Error Status: [15:8]</li>
+                                        <li>Ready Flag: [7:0]</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="step-card">
+                                <h4>Memory Interface</h4>
+                                <div class="step-details">
+                                    <h5>Memory Map</h5>
+                                    <pre><code class="language-c">#define PE_BASE_ADDR    0x00000000
+#define FIFO_BASE_ADDR  0x10000000
+#define MEM_BASE_ADDR   0x20000000
+#define CTRL_BASE_ADDR  0x30000000</code></pre>
+                                    <h5>Access Functions</h5>
+                                    <pre><code class="language-c">uint32_t read_pe_status(uint32_t pe_id) {
+    return *(volatile uint32_t*)(PE_BASE_ADDR + (pe_id << 2));
+}</code></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="implementation-details">
+                        <h3>Technical Specifications</h3>
+                        <div class="specs-grid">
+                            <div class="spec-card">
+                                <h4>FIFO Module</h4>
+                                <ul>
+                                    <li>Clock Frequency: 500 MHz</li>
+                                    <li>Power Consumption: 150mW</li>
+                                    <li>Area: 0.25 mm²</li>
+                                    <li>Maximum Throughput: 32 Gbps</li>
+                                </ul>
+                            </div>
+                            <div class="spec-card">
+                                <h4>CGRA Module</h4>
+                                <ul>
+                                    <li>Clock Frequency: 500 MHz</li>
+                                    <li>Total Power: 2.5W</li>
+                                    <li>Area: 4 mm²</li>
+                                    <li>Peak Performance: 256 GOPS</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="flow" class="section">
+            <div class="container">
+                <h2>Data Flow</h2>
+                <div class="flow-content">
+                    <div class="flow-diagram">
+                        <img src="images/data_flow.svg" alt="Data Flow Diagram">
+                    </div>
+                    <div class="flow-description">
+                        <h3>Processing Pipeline</h3>
+                        <div class="pipeline-steps">
+                            <div class="pipeline-step">
+                                <h4>1. Data Input</h4>
+                                <p>Data is received through the input FIFO buffer, with validation and error checking.</p>
+                            </div>
+                            <div class="pipeline-step">
+                                <h4>2. CGRA Processing</h4>
+                                <p>Data is processed by the CGRA array using configured processing elements.</p>
+                            </div>
+                            <div class="pipeline-step">
+                                <h4>3. Memory Access</h4>
+                                <p>Processed data is stored in the memory hierarchy based on access patterns.</p>
+                            </div>
+                            <div class="pipeline-step">
+                                <h4>4. Output Generation</h4>
+                                <p>Results are collected and transmitted through the output FIFO buffer.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="modifications" class="section">
+            <div class="container">
+                <h2>Project Modifications</h2>
+                <div class="modifications-content">
+                    <div class="modification-card">
+                        <h3>FIFO System Enhancement</h3>
+                        <div class="mod-details">
+                            <h4>Before</h4>
+                            <ul>
+                                <li>Single-channel FIFO</li>
+                                <li>Fixed depth of 32 entries</li>
+                                <li>Basic error detection</li>
+                                <li>No priority levels</li>
+                            </ul>
+                            <h4>After</h4>
+                            <ul>
+                                <li>Multi-channel FIFO system</li>
+                                <li>Configurable depth (32-1024)</li>
+                                <li>Advanced error detection and correction</li>
+                                <li>Priority-based scheduling</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="modification-card">
+                        <h3>CGRA Optimization</h3>
+                        <div class="mod-details">
+                            <h4>Before</h4>
+                            <ul>
+                                <li>Fixed PE configuration</li>
+                                <li>Limited memory bandwidth</li>
+                                <li>Basic interconnect</li>
+                                <li>No power management</li>
+                            </ul>
+                            <h4>After</h4>
+                            <ul>
+                                <li>Dynamic PE reconfiguration</li>
+                                <li>Enhanced memory interface</li>
+                                <li>Adaptive routing</li>
+                                <li>Power-aware operation</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="section">
+            <div class="container">
+                <h2>Impact Analysis</h2>
+                <div class="impact-content">
+                    <div class="impact-card">
+                        <h3>Performance Improvements</h3>
+                        <div class="impact-metrics">
+                            <div class="metric">
+                                <h4>Throughput</h4>
+                                <p>Increased by 150%</p>
+                            </div>
+                            <div class="metric">
+                                <h4>Latency</h4>
+                                <p>Reduced by 40%</p>
+                            </div>
+                            <div class="metric">
+                                <h4>Power Efficiency</h4>
+                                <p>Improved by 30%</p>
+                            </div>
+                            <div class="metric">
+                                <h4>Area Utilization</h4>
+                                <p>Optimized by 25%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="impact-card">
+                        <h3>Key Benefits</h3>
+                        <ul>
+                            <li>Enhanced data processing capabilities</li>
+                            <li>Improved system reliability</li>
+                            <li>Better resource utilization</li>
+                            <li>Reduced power consumption</li>
+                            <li>Increased system scalability</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="conclusion" class="section">
+            <div class="container">
+                <h2>Conclusion</h2>
+                <div class="conclusion-content">
+                    <div class="conclusion-card">
+                        <h3>Project Summary</h3>
+                        <p>The CGRA-FIFO integration project has successfully achieved its objectives of improving system performance, reliability, and efficiency. The implemented modifications have resulted in significant improvements in throughput, latency, and power efficiency.</p>
+                    </div>
+
+                    <div class="conclusion-card">
+                        <h3>Future Work</h3>
+                        <ul>
+                            <li>Further optimization of memory hierarchy</li>
+                            <li>Enhanced power management features</li>
+                            <li>Advanced error recovery mechanisms</li>
+                            <li>Support for additional processing modes</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.24.1/components/prism-verilog.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html> 

@@ -2,24 +2,24 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Wextra -I./drivers
+CFLAGS = -Wall -Wextra -I./drivers -I./external/drivers/cgra
 LDFLAGS = -lm
 
 # Directories
 BUILD_DIR = build
 DRIVER_DIR = drivers
-APP_DIR = apps
+APP_DIR = applications
 
 # Source files
 DRIVER_SRCS = $(wildcard $(DRIVER_DIR)/*.c)
-APP_SRCS = $(wildcard $(APP_DIR)/*.c)
+APP_SRCS = $(wildcard $(APP_DIR)/*/main.c)
 
 # Object files
 DRIVER_OBJS = $(DRIVER_SRCS:%.c=$(BUILD_DIR)/%.o)
 APP_OBJS = $(APP_SRCS:%.c=$(BUILD_DIR)/%.o)
 
 # Executables
-APPS = $(APP_SRCS:$(APP_DIR)/%.c=$(BUILD_DIR)/%)
+APPS = $(APP_SRCS:$(APP_DIR)/%/main.c=$(BUILD_DIR)/%)
 
 # Default target
 all: $(APPS)

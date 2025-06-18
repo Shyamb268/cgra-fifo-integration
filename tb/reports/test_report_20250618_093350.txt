@@ -1,0 +1,29 @@
+=== CGRA-FIFO Integration Test Report ===
+Generated on: Wed Jun 18 09:33:50 AM IST 2025
+Test run duration: 00:00:00
+
+Test Suite Summary:
+==================
+Test Suite      Status     Duration   Pass       Fail      
+------------------------------------------------------------
+regression      FAIL       0s                              
+real_world      FAIL       0s                              
+basic           PASS       0s                              
+functional      FAIL       0s                              
+advanced        FAIL       0s                              
+------------------------------------------------------------
+TOTAL                                 0          0         
+
+Overall Results:
+===============
+Total Tests: 0
+Passed: 0
+Failed: 0
+
+Detailed Log Files:
+==================
+regression: /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/tb/logs/regression_20250618_093350.log
+real_world: /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/tb/logs/real_world_20250618_093350.log
+basic: /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/tb/logs/basic_20250618_093350.log
+functional: /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/tb/logs/functional_20250618_093350.log
+advanced: /home/manovega02/dataroot/shyamb/PASS/cgra-fifo-integration01/tb/logs/advanced_20250618_093350.log

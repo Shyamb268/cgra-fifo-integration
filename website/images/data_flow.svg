@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="800" height="400" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="800" height="400" fill="#f5f6fa"/>
+    
+    <!-- Data Flow Path -->
+    <g stroke="#2c3e50" stroke-width="2" fill="none">
+        <!-- Main Flow -->
+        <path d="M50,200 L150,200 L250,200 L350,200 L450,200 L550,200 L650,200 L750,200" 
+              marker-end="url(#arrowhead)"/>
+    </g>
+    
+    <!-- Process Boxes -->
+    <g>
+        <!-- Input Stage -->
+        <rect x="50" y="150" width="100" height="100" fill="#3498db" rx="10"/>
+        <text x="100" y="200" fill="white" text-anchor="middle">Input Data</text>
+        
+        <!-- FIFO Stage -->
+        <rect x="150" y="150" width="100" height="100" fill="#2c3e50" rx="10"/>
+        <text x="200" y="200" fill="white" text-anchor="middle">FIFO Buffer</text>
+        
+        <!-- Processing Stage -->
+        <rect x="250" y="150" width="100" height="100" fill="#e74c3c" rx="10"/>
+        <text x="300" y="200" fill="white" text-anchor="middle">CGRA Processing</text>
+        
+        <!-- Memory Stage -->
+        <rect x="350" y="150" width="100" height="100" fill="#2c3e50" rx="10"/>
+        <text x="400" y="200" fill="white" text-anchor="middle">Memory Access</text>
+        
+        <!-- Output Stage -->
+        <rect x="450" y="150" width="100" height="100" fill="#3498db" rx="10"/>
+        <text x="500" y="200" fill="white" text-anchor="middle">Output FIFO</text>
+        
+        <!-- Verification Stage -->
+        <rect x="550" y="150" width="100" height="100" fill="#2c3e50" rx="10"/>
+        <text x="600" y="200" fill="white" text-anchor="middle">Data Verification</text>
+        
+        <!-- Result Stage -->
+        <rect x="650" y="150" width="100" height="100" fill="#27ae60" rx="10"/>
+        <text x="700" y="200" fill="white" text-anchor="middle">Final Result</text>
+    </g>
+    
+    <!-- Arrow Definition -->
+    <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                refX="9" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#2c3e50"/>
+        </marker>
+    </defs>
+    
+    <!-- Labels -->
+    <g font-size="14" fill="#2c3e50">
+        <text x="100" y="140" text-anchor="middle">Stage 1</text>
+        <text x="200" y="140" text-anchor="middle">Stage 2</text>
+        <text x="300" y="140" text-anchor="middle">Stage 3</text>
+        <text x="400" y="140" text-anchor="middle">Stage 4</text>
+        <text x="500" y="140" text-anchor="middle">Stage 5</text>
+        <text x="600" y="140" text-anchor="middle">Stage 6</text>
+        <text x="700" y="140" text-anchor="middle">Stage 7</text>
+    </g>
+</svg> 

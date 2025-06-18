@@ -30,8 +30,10 @@ void init_input_data(void) {
 
 // Process FFT using CGRA with FIFO
 int process_fft(void) {
+    cgra_fifo_driver_t driver;
+    
     // Initialize FIFO and CGRA
-    if (cgra_fifo_init() != 0) {
+    if (cgra_fifo_init(&driver, 0x10000000, NUM_INSTANCES) != 0) {
         printf("Failed to initialize FIFO and CGRA\n");
         return -1;
     }
@@ -59,13 +61,13 @@ int process_fft(void) {
         }
         
         // Write real part
-        if (cgra_fifo_write(input_data[i].real) != 0) {
+        if (cgra_fifo_write(&driver, input_data[i].real) != 0) {
             printf("Failed to write real part\n");
             return -1;
         }
         
         // Write imaginary part
-        if (cgra_fifo_write(input_data[i].imag) != 0) {
+        if (cgra_fifo_write(&driver, input_data[i].imag) != 0) {
             printf("Failed to write imaginary part\n");
             return -1;
         }
@@ -73,7 +75,7 @@ int process_fft(void) {
     
     // Start CGRA instances
     for (int i = 0; i < NUM_INSTANCES; i++) {
-        if (cgra_fifo_start_instance(i) != 0) {
+        if (cgra_start_instance(&driver, i) != 0) {
             printf("Failed to start instance %d\n", i);
             return -1;
         }
@@ -92,14 +94,14 @@ int process_fft(void) {
         int32_t real_data, imag_data;
         
         // Read real part
-        if (cgra_fifo_read(&real_data) != 0) {
+        if (cgra_read_data(&driver, i % NUM_INSTANCES, (uint32_t*)&real_data) != 0) {
             printf("Failed to read real part\n");
             return -1;
         }
         output_data[i].real = real_data;
         
         // Read imaginary part
-        if (cgra_fifo_read(&imag_data) != 0) {
+        if (cgra_read_data(&driver, i % NUM_INSTANCES, (uint32_t*)&imag_data) != 0) {
             printf("Failed to read imaginary part\n");
             return -1;
         }
